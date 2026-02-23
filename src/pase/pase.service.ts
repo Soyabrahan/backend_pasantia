@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pase } from './entities/pase.entity';
@@ -17,25 +17,34 @@ export class PaseService {
         // Transactional logic would be better here
         const { equipos, ...paseData } = createPaseDto;
 
-        // Save Pase
-        const pase = (this.paseRepository.create(paseData as any) as unknown) as Pase;
-        const savedPase = await this.paseRepository.save(pase);
+        try {
+            // Save Pase
+            const pase = (this.paseRepository.create(paseData as any) as unknown) as Pase;
+            const savedPase = await this.paseRepository.save(pase);
 
-        // Save EquiposRelation
-        if (equipos && equipos.length > 0) {
-            const equiposEntities = equipos.map(e => ({
-                paseId: savedPase.id,
-                equipoId: e.equipoId,
-                cantidad: e.cantidad
-            }));
-            await this.equiposPasesRepository.save(equiposEntities);
+            // Save EquiposRelation
+            if (equipos && equipos.length > 0) {
+                const equiposEntities = equipos.map(e => ({
+                    paseId: savedPase.id,
+                    equipoId: e.equipoId,
+                    cantidad: e.cantidad
+                }));
+                await this.equiposPasesRepository.save(equiposEntities);
+            }
+
+            return this.findOne(savedPase.id);
+        } catch (error) {
+            if (error.code === 'SQLITE_CONSTRAINT' || error.message.includes('UNIQUE constraint failed')) {
+                throw new ConflictException('El número de pase ya existe.');
+            }
+            throw error;
         }
-
-        return this.findOne(savedPase.id);
     }
 
     findAll() {
-        return this.paseRepository.find({ relations: ['solicitador', 'vehiculo', 'destino'] });
+        return this.paseRepository.find({ 
+            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino'] 
+        });
     }
 
     findOne(id: number) {
@@ -47,5 +56,13 @@ export class PaseService {
 
     update(id: number, updatePaseDto: any) {
         return this.paseRepository.update(id, updatePaseDto);
+    }
+
+    async findLastNumero() {
+        const lastPase = await this.paseRepository.findOne({
+            where: {},
+            order: { id: 'DESC' }
+        });
+        return lastPase ? lastPase.numeroPase : null;
     }
 }

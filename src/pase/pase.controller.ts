@@ -7,6 +7,12 @@ export class PaseController {
     constructor(private readonly paseService: PaseService) { }
 
     @UseGuards(AuthGuard('jwt'))
+    @Get('ultimo-numero')
+    findLastNumero() {
+        return this.paseService.findLastNumero();
+    }
+
+    @UseGuards(AuthGuard('jwt'))
     @Post()
     create(@Body() createPaseDto: any) {
         return this.paseService.create(createPaseDto);

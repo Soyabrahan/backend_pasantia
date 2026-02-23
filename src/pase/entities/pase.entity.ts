@@ -1,7 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { Usuario } from '../../usuario/entities/usuario.entity';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
 import { Destino } from '../../destino/entities/destino.entity';
+import { Empleado } from '../../empleado/entities/empleado.entity';
 import { EquiposPases } from './equipos-pases.entity';
 
 @Entity()
@@ -13,35 +13,35 @@ export class Pase {
     numeroPase: string;
 
     @Column()
-    concepto: string; // Enum?
+    concepto: string;
 
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    @CreateDateColumn()
     fecha_emision: Date;
 
-    @ManyToOne(() => Usuario)
+    @ManyToOne(() => Empleado)
     @JoinColumn({ name: 'solicitadorId' })
-    solicitador: Usuario;
+    solicitador: Empleado;
 
     @Column()
     solicitadorId: number;
 
-    @ManyToOne(() => Usuario)
+    @ManyToOne(() => Empleado)
     @JoinColumn({ name: 'conductorId' })
-    conductor: Usuario;
+    conductor: Empleado;
 
     @Column({ nullable: true })
     conductorId: number;
 
-    @ManyToOne(() => Usuario)
+    @ManyToOne(() => Empleado)
     @JoinColumn({ name: 'autorizadorId' })
-    autorizador: Usuario;
+    autorizador: Empleado;
 
     @Column({ nullable: true })
     autorizadorId: number;
 
-    @ManyToOne(() => Usuario)
+    @ManyToOne(() => Empleado)
     @JoinColumn({ name: 'despachadorId' })
-    despachador: Usuario;
+    despachador: Empleado;
 
     @Column({ nullable: true })
     despachadorId: number;

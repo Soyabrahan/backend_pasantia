@@ -8,15 +8,12 @@ export class Usuario {
     @Column({ unique: true })
     ficha: string;
 
+    @Column({ nullable: true })
+    nombre: string;
+
     @Column()
     contrasena: string;
 
     @Column()
-    nombre: string;
-
-    @Column()
-    departamento: string;
-
-    @Column()
-    rol: string;
+    rol: string; // Access roles: "Administrador", "Usuario"
 }

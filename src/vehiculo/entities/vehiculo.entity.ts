@@ -8,6 +8,9 @@ export class Vehiculo {
     @Column()
     placa: string;
 
-    @Column()
+    @Column({ default: false })
+    esFMO: boolean;
+
+    @Column({ nullable: true })
     fmo: string;
 }
