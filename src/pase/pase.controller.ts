@@ -6,7 +6,6 @@ import { AuthGuard } from '@nestjs/passport';
 export class PaseController {
     constructor(private readonly paseService: PaseService) { }
 
-    @UseGuards(AuthGuard('jwt'))
     @Get('ultimo-numero')
     findLastNumero() {
         return this.paseService.findLastNumero();
