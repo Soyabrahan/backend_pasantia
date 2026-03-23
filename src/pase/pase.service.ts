@@ -43,8 +43,14 @@ export class PaseService {
 
     findAll() {
         return this.paseRepository.find({ 
-            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino'] 
+            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo'],
+            order: { id: 'DESC' }
         });
+    }
+
+    async removeAll() {
+        await this.equiposPasesRepository.delete({});
+        return this.paseRepository.delete({});
     }
 
     findOne(id: number) {
@@ -63,6 +69,6 @@ export class PaseService {
             where: {},
             order: { id: 'DESC' }
         });
-        return lastPase ? lastPase.numeroPase : null;
+        return { numeroPase: lastPase ? lastPase.numeroPase : null };
     }
 }
