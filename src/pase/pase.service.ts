@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pase } from './entities/pase.entity';
 import { EquiposPases } from './entities/equipos-pases.entity';
+import { Equipo } from '../equipo/entities/equipo.entity';
 
 @Injectable()
 export class PaseService {
@@ -11,6 +12,8 @@ export class PaseService {
         private paseRepository: Repository<Pase>,
         @InjectRepository(EquiposPases)
         private equiposPasesRepository: Repository<EquiposPases>,
+        @InjectRepository(Equipo)
+        private equipoRepository: Repository<Equipo>,
     ) { }
 
     async create(createPaseDto: any) {
@@ -24,17 +27,58 @@ export class PaseService {
 
             // Save EquiposRelation
             if (equipos && equipos.length > 0) {
-                const equiposEntities = equipos.map(e => ({
-                    paseId: savedPase.id,
-                    equipoId: e.equipoId,
-                    cantidad: e.cantidad
-                }));
+                const equiposEntities: any[] = [];
+                for (const e of equipos) {
+                    if (e.fmos && e.fmos.length > 0) {
+                        for (const f of e.fmos) {
+                            const savedEquipo: any = await this.equipoRepository.save({
+                                fmo: f,
+                                marca: e.marca,
+                                nombre: e.descripcion,
+                                serial: undefined
+                            } as any);
+                            equiposEntities.push({
+                                paseId: savedPase.id,
+                                equipoId: savedEquipo.id,
+                                cantidad: 1
+                            });
+                        }
+                    } else if (e.seriales && e.seriales.length > 0) {
+                        for (const s of e.seriales) {
+                            const savedEquipo: any = await this.equipoRepository.save({
+                                fmo: undefined,
+                                marca: e.marca,
+                                nombre: e.descripcion,
+                                serial: s
+                            } as any);
+                            equiposEntities.push({
+                                paseId: savedPase.id,
+                                equipoId: savedEquipo.id,
+                                cantidad: 1
+                            });
+                        }
+                    } else {
+                        // "Ninguno" seleccionado
+                        const savedEquipo: any = await this.equipoRepository.save({
+                            fmo: undefined,
+                            marca: e.marca,
+                            nombre: e.descripcion,
+                            serial: undefined
+                        } as any);
+                        equiposEntities.push({
+                            paseId: savedPase.id,
+                            equipoId: savedEquipo.id,
+                            cantidad: e.cantidad || 1
+                        });
+                    }
+                }
                 await this.equiposPasesRepository.save(equiposEntities);
             }
 
             return this.findOne(savedPase.id);
         } catch (error) {
-            if (error.code === 'SQLITE_CONSTRAINT' || error.message.includes('UNIQUE constraint failed')) {
+            console.error('Error in PaseService create:', error);
+            if (error?.message?.includes('numeroPase')) {
                 throw new ConflictException('El número de pase ya existe.');
             }
             throw error;

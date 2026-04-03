@@ -5,12 +5,15 @@ export class Equipo {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({ nullable: true })
     fmo: string;
 
-    @Column()
+    @Column({ nullable: true })
     marca: string;
 
-    @Column()
-    modelo: string;
+    @Column({ nullable: true })
+    nombre: string;
+
+    @Column({ type: 'text', nullable: true })
+    serial: string;
 }

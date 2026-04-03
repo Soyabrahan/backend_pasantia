@@ -66,6 +66,15 @@ export class Pase {
     @Column({ nullable: true })
     tipo_pago: string;
 
+    @Column({ type: 'text', nullable: true })
+    observaciones: string;
+
+    @Column({ nullable: true })
+    tiempo_estimado: string;
+
+    @Column({ type: 'text', nullable: true })
+    solicitud: string;
+
     @OneToMany(() => EquiposPases, (equiposPases) => equiposPases.pase)
     equiposPases: EquiposPases[];
 }
