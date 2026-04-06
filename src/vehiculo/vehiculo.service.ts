@@ -17,8 +17,11 @@ export class VehiculoService {
     findAll() {
         return this.vehiculoRepository.find();
     }
-    update(id: number, vehiculo: Partial<Vehiculo>) {
-        return this.vehiculoRepository.update(id, vehiculo);
+    async update(id: number, vehiculo: Partial<Vehiculo>) {
+        const v = await this.vehiculoRepository.findOneBy({ id });
+        if (!v) return null;
+        Object.assign(v, vehiculo);
+        return this.vehiculoRepository.save(v);
     }
     delete(id: number) {
         return this.vehiculoRepository.delete(id);

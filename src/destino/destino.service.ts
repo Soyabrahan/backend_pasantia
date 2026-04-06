@@ -18,8 +18,11 @@ export class DestinoService {
         return this.destinoRepository.find();
     }
 
-    update(id: number, data: Partial<Destino>) {
-        return this.destinoRepository.update(id, data);
+    async update(id: number, data: Partial<Destino>) {
+        const d = await this.destinoRepository.findOneBy({ id });
+        if (!d) return null;
+        Object.assign(d, data);
+        return this.destinoRepository.save(d);
     }
 
     async delete(id: number) {
