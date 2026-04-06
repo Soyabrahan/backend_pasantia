@@ -17,4 +17,12 @@ export class DestinoService {
     findAll() {
         return this.destinoRepository.find();
     }
+
+    update(id: number, data: Partial<Destino>) {
+        return this.destinoRepository.update(id, data);
+    }
+
+    async delete(id: number) {
+        return this.destinoRepository.delete(id);
+    }
 }
