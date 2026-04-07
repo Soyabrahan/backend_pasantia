@@ -5,7 +5,7 @@ export class Equipo {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ nullable: true })
+    @Column({ unique: true, nullable: true })
     fmo: string;
 
     @Column({ nullable: true })
@@ -14,6 +14,6 @@ export class Equipo {
     @Column({ nullable: true })
     nombre: string;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', unique: true, nullable: true })
     serial: string;
 }

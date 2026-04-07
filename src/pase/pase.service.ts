@@ -31,45 +31,61 @@ export class PaseService {
                 for (const e of equipos) {
                     if (e.fmos && e.fmos.length > 0) {
                         for (const f of e.fmos) {
-                            const savedEquipo: any = await this.equipoRepository.save({
-                                fmo: f,
-                                marca: e.marca,
-                                nombre: e.descripcion,
-                                serial: undefined
-                            } as any);
-                            equiposEntities.push({
-                                paseId: savedPase.id,
-                                equipoId: savedEquipo.id,
-                                cantidad: 1
-                            });
+                            // Find existing or create
+                            let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
+                            if (!equipoItem) {
+                                equipoItem = await this.equipoRepository.save({
+                                    fmo: f,
+                                    marca: e.marca,
+                                    nombre: e.descripcion,
+                                    serial: undefined
+                                } as any);
+                            }
+                            
+                            if (equipoItem) {
+                                equiposEntities.push({
+                                    paseId: savedPase.id,
+                                    equipoId: equipoItem.id,
+                                    cantidad: 1
+                                });
+                            }
                         }
                     } else if (e.seriales && e.seriales.length > 0) {
                         for (const s of e.seriales) {
-                            const savedEquipo: any = await this.equipoRepository.save({
-                                fmo: undefined,
-                                marca: e.marca,
-                                nombre: e.descripcion,
-                                serial: s
-                            } as any);
-                            equiposEntities.push({
-                                paseId: savedPase.id,
-                                equipoId: savedEquipo.id,
-                                cantidad: 1
-                            });
+                            // Find existing or create
+                            let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
+                            if (!equipoItem) {
+                                equipoItem = await this.equipoRepository.save({
+                                    fmo: undefined,
+                                    marca: e.marca,
+                                    nombre: e.descripcion,
+                                    serial: s
+                                } as any);
+                            }
+
+                            if (equipoItem) {
+                                equiposEntities.push({
+                                    paseId: savedPase.id,
+                                    equipoId: equipoItem.id,
+                                    cantidad: 1
+                                });
+                            }
                         }
                     } else {
-                        // "Ninguno" seleccionado
+                        // "Ninguno" seleccionado (generic items)
                         const savedEquipo: any = await this.equipoRepository.save({
                             fmo: undefined,
                             marca: e.marca,
                             nombre: e.descripcion,
                             serial: undefined
                         } as any);
-                        equiposEntities.push({
-                            paseId: savedPase.id,
-                            equipoId: savedEquipo.id,
-                            cantidad: e.cantidad || 1
-                        });
+                        if (savedEquipo) {
+                            equiposEntities.push({
+                                paseId: savedPase.id,
+                                equipoId: savedEquipo.id,
+                                cantidad: e.cantidad || 1
+                            });
+                        }
                     }
                 }
                 await this.equiposPasesRepository.save(equiposEntities);

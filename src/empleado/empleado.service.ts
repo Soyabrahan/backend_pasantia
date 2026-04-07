@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Empleado } from './entities/empleado.entity';
@@ -15,6 +15,10 @@ export class EmpleadoService {
     }
 
     async create(empleado: Partial<Empleado>): Promise<Empleado> {
+        const existing = await this.empleadoRepository.findOneBy({ ficha: empleado.ficha });
+        if (existing) {
+            throw new ConflictException(`La ficha ${empleado.ficha} ya pertenece al empleado: ${existing.nombre}`);
+        }
         const newEmpleado = this.empleadoRepository.create(empleado);
         return this.empleadoRepository.save(newEmpleado);
     }
