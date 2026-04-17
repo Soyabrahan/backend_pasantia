@@ -11,6 +11,8 @@ export class DestinoService {
     ) { }
 
     create(createDestinoDto: Partial<Destino>) {
+        if (createDestinoDto.nombre) createDestinoDto.nombre = createDestinoDto.nombre.toLowerCase();
+        if (createDestinoDto.direccion) createDestinoDto.direccion = createDestinoDto.direccion.toLowerCase();
         return this.destinoRepository.save(createDestinoDto);
     }
 
@@ -21,6 +23,10 @@ export class DestinoService {
     async update(id: number, data: Partial<Destino>) {
         const d = await this.destinoRepository.findOneBy({ id });
         if (!d) return null;
+        
+        if (data.nombre) data.nombre = data.nombre.toLowerCase();
+        if (data.direccion) data.direccion = data.direccion.toLowerCase();
+
         Object.assign(d, data);
         return this.destinoRepository.save(d);
     }

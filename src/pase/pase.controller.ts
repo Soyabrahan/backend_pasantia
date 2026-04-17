@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Delete, Request } from '@nestjs/common';
 import { PaseService } from './pase.service';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -21,8 +21,9 @@ export class PaseController {
     @ApiOperation({ summary: 'Crear un nuevo pase' })
     @ApiResponse({ status: 201, description: 'El pase ha sido creado exitosamente.' })
     @Post()
-    create(@Body() createPaseDto: CreatePaseDto) {
-        return this.paseService.create(createPaseDto);
+    create(@Body() createPaseDto: CreatePaseDto, @Request() req) {
+        const userId = req.user.id;
+        return this.paseService.create(createPaseDto, userId);
     }
 
     @UseGuards(AuthGuard('jwt'))

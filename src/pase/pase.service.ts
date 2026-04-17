@@ -16,13 +16,13 @@ export class PaseService {
         private equipoRepository: Repository<Equipo>,
     ) { }
 
-    async create(createPaseDto: any) {
+    async create(createPaseDto: any, userId?: number) {
         // Transactional logic would be better here
         const { equipos, ...paseData } = createPaseDto;
 
         try {
             // Save Pase
-            const pase = (this.paseRepository.create(paseData as any) as unknown) as Pase;
+            const pase = (this.paseRepository.create({ ...paseData, usuarioId: userId } as any) as unknown) as Pase;
             const savedPase = await this.paseRepository.save(pase);
 
             // Save EquiposRelation
@@ -36,8 +36,8 @@ export class PaseService {
                             if (!equipoItem) {
                                 equipoItem = await this.equipoRepository.save({
                                     fmo: f,
-                                    marca: e.marca,
-                                    nombre: e.descripcion,
+                                    marca: e.marca ? e.marca.toLowerCase() : undefined,
+                                    nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
                                     serial: undefined
                                 } as any);
                             }
@@ -57,8 +57,8 @@ export class PaseService {
                             if (!equipoItem) {
                                 equipoItem = await this.equipoRepository.save({
                                     fmo: undefined,
-                                    marca: e.marca,
-                                    nombre: e.descripcion,
+                                    marca: e.marca ? e.marca.toLowerCase() : undefined,
+                                    nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
                                     serial: s
                                 } as any);
                             }
@@ -75,8 +75,8 @@ export class PaseService {
                         // "Ninguno" seleccionado (generic items)
                         const savedEquipo: any = await this.equipoRepository.save({
                             fmo: undefined,
-                            marca: e.marca,
-                            nombre: e.descripcion,
+                            marca: e.marca ? e.marca.toLowerCase() : undefined,
+                            nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
                             serial: undefined
                         } as any);
                         if (savedEquipo) {
@@ -103,7 +103,7 @@ export class PaseService {
 
     findAll() {
         return this.paseRepository.find({ 
-            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo'],
+            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo', 'usuario'],
             order: { id: 'DESC' }
         });
     }
@@ -116,7 +116,7 @@ export class PaseService {
     findOne(id: number) {
         return this.paseRepository.findOne({
             where: { id },
-            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo']
+            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo', 'usuario']
         });
     }
 

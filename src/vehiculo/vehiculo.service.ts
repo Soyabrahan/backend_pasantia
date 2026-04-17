@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Vehiculo } from './entities/vehiculo.entity';
 
 @Injectable()
@@ -10,18 +10,83 @@ export class VehiculoService {
         private vehiculoRepository: Repository<Vehiculo>,
     ) { }
 
-    create(createVehiculoDto: Partial<Vehiculo>) {
-        return this.vehiculoRepository.save(createVehiculoDto);
+    async create(createVehiculoDto: Partial<Vehiculo>) {
+        const { conductores, ...rest } = createVehiculoDto;
+        
+        // Normalizar a minúsculas
+        if (rest.marca) rest.marca = rest.marca.toLowerCase();
+        if (rest.modelo) rest.modelo = rest.modelo.toLowerCase();
+        if (rest.placa) rest.placa = rest.placa.toLowerCase();
+        if (rest.fmo) rest.fmo = rest.fmo.toLowerCase();
+
+        const saved = await this.vehiculoRepository.save(rest);
+        
+        if (conductores && conductores.length > 0) {
+            // Verificar si alguno de los conductores ya tiene un vehículo asignado
+            for (const c of conductores) {
+                const existingAssignment = await this.vehiculoRepository.findOne({
+                    where: { conductores: { id: c.id } }
+                });
+                if (existingAssignment) {
+                    throw new ConflictException(`El conductor con ID ${c.id} ya tiene el vehículo ${existingAssignment.placa} asignado.`);
+                }
+            }
+
+            const v = await this.vehiculoRepository.findOne({ where: { id: saved.id }, relations: ['conductores'] });
+            if (v) {
+                v.conductores = conductores;
+                await this.vehiculoRepository.save(v);
+            }
+        }
+        return this.findOneComplete(saved.id);
     }
 
     findAll() {
-        return this.vehiculoRepository.find();
+        return this.vehiculoRepository.find({ relations: ['conductores'] });
     }
-    async update(id: number, vehiculo: Partial<Vehiculo>) {
-        const v = await this.vehiculoRepository.findOneBy({ id });
-        if (!v) return null;
-        Object.assign(v, vehiculo);
-        return this.vehiculoRepository.save(v);
+
+    private findOneComplete(id: number) {
+        return this.vehiculoRepository.findOne({
+            where: { id },
+            relations: ['conductores']
+        });
+    }
+
+    async update(id: number, vehiculoData: Partial<Vehiculo>) {
+        const { conductores, ...rest } = vehiculoData;
+        
+        // Normalizar a minúsculas
+        if (rest.marca) rest.marca = rest.marca.toLowerCase();
+        if (rest.modelo) rest.modelo = rest.modelo.toLowerCase();
+        if (rest.placa) rest.placa = rest.placa.toLowerCase();
+        if (rest.fmo) rest.fmo = rest.fmo.toLowerCase();
+
+        // Actualizamos los campos básicos
+        await this.vehiculoRepository.update(id, rest);
+        
+        // Si hay conductores, actualizamos la relación manualmente para asegurar persistencia
+        if (conductores) {
+            // Verificar si alguno de los conductores ya tiene otro vehículo asignado
+            for (const c of conductores) {
+                const existingAssignment = await this.vehiculoRepository.findOne({
+                    where: { 
+                        id: Not(id), // Ignorar el vehículo actual
+                        conductores: { id: c.id } 
+                    }
+                });
+                if (existingAssignment) {
+                    throw new ConflictException(`El conductor ya tiene el vehículo ${existingAssignment.placa} asignado.`);
+                }
+            }
+
+            const v = await this.vehiculoRepository.findOne({ where: { id }, relations: ['conductores'] });
+            if (v) {
+                v.conductores = conductores;
+                await this.vehiculoRepository.save(v);
+            }
+        }
+        
+        return this.findOneComplete(id);
     }
     delete(id: number) {
         return this.vehiculoRepository.delete(id);

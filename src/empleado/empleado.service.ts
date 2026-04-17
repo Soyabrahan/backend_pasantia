@@ -19,6 +19,12 @@ export class EmpleadoService {
         if (existing) {
             throw new ConflictException(`La ficha ${empleado.ficha} ya pertenece al empleado: ${existing.nombre}`);
         }
+        
+        // Normalizar a minúsculas
+        if (empleado.nombre) empleado.nombre = empleado.nombre.toLowerCase();
+        if (empleado.cargo) empleado.cargo = empleado.cargo.toLowerCase();
+        if (empleado.departamento) empleado.departamento = empleado.departamento.toLowerCase();
+
         const newEmpleado = this.empleadoRepository.create(empleado);
         return this.empleadoRepository.save(newEmpleado);
     }
@@ -26,6 +32,12 @@ export class EmpleadoService {
     async update(id: number, data: Partial<Empleado>): Promise<Empleado | null> {
         const empleado = await this.empleadoRepository.findOneBy({ id });
         if (!empleado) return null;
+
+        // Normalizar a minúsculas
+        if (data.nombre) data.nombre = data.nombre.toLowerCase();
+        if (data.cargo) data.cargo = data.cargo.toLowerCase();
+        if (data.departamento) data.departamento = data.departamento.toLowerCase();
+
         Object.assign(empleado, data);
         return this.empleadoRepository.save(empleado);
     }

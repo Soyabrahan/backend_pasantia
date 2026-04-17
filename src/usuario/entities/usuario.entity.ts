@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Pase } from '../../pase/entities/pase.entity';
 
 @Entity()
 export class Usuario {
@@ -16,4 +17,7 @@ export class Usuario {
 
     @Column()
     rol: string; // Access roles: "Administrador", "Usuario"
+
+    @OneToMany(() => Pase, (pase) => pase.usuario)
+    pases: Pase[];
 }

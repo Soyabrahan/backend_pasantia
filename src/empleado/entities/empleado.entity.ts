@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany } from 'typeorm';
+import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
 
 @Entity()
 export class Empleado {
@@ -19,4 +20,7 @@ export class Empleado {
 
     @Column({ nullable: true })
     rol: string; // "Solicitante", "Conductor", "Despachador"
+
+    @ManyToMany(() => Vehiculo, (vehiculo) => vehiculo.conductores)
+    vehiculos: Vehiculo[];
 }
