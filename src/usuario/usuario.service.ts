@@ -87,4 +87,15 @@ export class UsuarioService implements OnModuleInit {
         await this.usuarioRepository.save(usuario);
         return true;
     }
+
+    async adminResetPassword(id: number): Promise<boolean> {
+        const usuario = await this.usuarioRepository.findOneBy({ id });
+        if (!usuario) return false;
+
+        const salt = await bcrypt.genSalt();
+        // Reset to their own ficha as default password
+        usuario.contrasena = await bcrypt.hash(usuario.ficha, salt);
+        await this.usuarioRepository.save(usuario);
+        return true;
+    }
 }

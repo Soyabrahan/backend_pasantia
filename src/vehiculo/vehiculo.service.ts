@@ -53,7 +53,8 @@ export class VehiculoService {
     }
 
     async update(id: number, vehiculoData: Partial<Vehiculo>) {
-        const { conductores, ...rest } = vehiculoData;
+        const { conductores, id: _id, ...rest } = vehiculoData as any;
+        delete rest.conductorId;
         
         // Normalizar a minúsculas
         if (rest.marca) rest.marca = rest.marca.toLowerCase();
@@ -61,10 +62,13 @@ export class VehiculoService {
         if (rest.placa) rest.placa = rest.placa.toLowerCase();
         if (rest.fmo) rest.fmo = rest.fmo.toLowerCase();
 
+        const v = await this.vehiculoRepository.findOne({ where: { id }, relations: ['conductores'] });
+        if (!v) return null;
+
         // Actualizamos los campos básicos
-        await this.vehiculoRepository.update(id, rest);
-        
-        // Si hay conductores, actualizamos la relación manualmente para asegurar persistencia
+        Object.assign(v, rest);
+
+        // Si hay conductores, actualizamos la relación
         if (conductores) {
             // Verificar si alguno de los conductores ya tiene otro vehículo asignado
             for (const c of conductores) {
@@ -78,17 +82,27 @@ export class VehiculoService {
                     throw new ConflictException(`El conductor ya tiene el vehículo ${existingAssignment.placa} asignado.`);
                 }
             }
-
-            const v = await this.vehiculoRepository.findOne({ where: { id }, relations: ['conductores'] });
-            if (v) {
-                v.conductores = conductores;
-                await this.vehiculoRepository.save(v);
-            }
+            v.conductores = conductores;
         }
+        
+        await this.vehiculoRepository.save(v);
         
         return this.findOneComplete(id);
     }
-    delete(id: number) {
-        return this.vehiculoRepository.delete(id);
+    async delete(id: number) {
+        const v = await this.vehiculoRepository.findOne({ where: { id }, relations: ['conductores'] });
+        if (v) {
+            v.conductores = [];
+            await this.vehiculoRepository.save(v);
+            try {
+                return await this.vehiculoRepository.delete(id);
+            } catch (error: any) {
+                if (error.code === '23503' || error.message?.includes('foreign key') || error.code === 'ER_ROW_IS_REFERENCED_2') {
+                    throw new ConflictException('No se puede borrar el vehículo porque está vinculado a uno o más pases.');
+                }
+                throw error;
+            }
+        }
+        return null;
     }
 }

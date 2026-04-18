@@ -40,6 +40,13 @@ export class UsuarioController {
         return { success: true };
     }
 
+    @Patch('admin-reset-password/:id')
+    @ApiOperation({ summary: 'Resetear contraseña de usuario (Admin)' })
+    async adminResetPassword(@Param('id') id: string) {
+        const success = await this.usuarioService.adminResetPassword(+id);
+        return { success };
+    }
+
     @Patch(':id')
     @ApiOperation({ summary: 'Actualizar datos básicos de un usuario' })
     update(@Param('id') id: string, @Body() data: Partial<Usuario>) {
