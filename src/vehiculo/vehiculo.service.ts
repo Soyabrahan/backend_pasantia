@@ -90,19 +90,6 @@ export class VehiculoService {
         return this.findOneComplete(id);
     }
     async delete(id: number) {
-        const v = await this.vehiculoRepository.findOne({ where: { id }, relations: ['conductores'] });
-        if (v) {
-            v.conductores = [];
-            await this.vehiculoRepository.save(v);
-            try {
-                return await this.vehiculoRepository.delete(id);
-            } catch (error: any) {
-                if (error.code === '23503' || error.message?.includes('foreign key') || error.code === 'ER_ROW_IS_REFERENCED_2') {
-                    throw new ConflictException('No se puede borrar el vehículo porque está vinculado a uno o más pases.');
-                }
-                throw error;
-            }
-        }
-        return null;
+        return await this.vehiculoRepository.softDelete(id);
     }
 }

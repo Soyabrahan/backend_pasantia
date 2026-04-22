@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { Pase } from './pase.entity';
 import { Equipo } from '../../equipo/entities/equipo.entity';
 
@@ -24,4 +24,7 @@ export class EquiposPases {
     @ManyToOne(() => Equipo)
     @JoinColumn({ name: 'equipoId' })
     equipo: Equipo;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
 }

@@ -17,4 +17,8 @@ export class EquipoService {
     findAll() {
         return this.equipoRepository.find();
     }
+
+    async delete(id: number) {
+        return this.equipoRepository.softDelete(id);
+    }
 }

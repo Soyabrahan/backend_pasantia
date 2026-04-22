@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, DeleteDateColumn } from 'typeorm';
 import { Pase } from '../../pase/entities/pase.entity';
 
 @Entity()
@@ -20,4 +20,7 @@ export class Usuario {
 
     @OneToMany(() => Pase, (pase) => pase.usuario)
     pases: Pase[];
+
+    @DeleteDateColumn()
+    deletedAt: Date;
 }

@@ -32,6 +32,6 @@ export class DestinoService {
     }
 
     async delete(id: number) {
-        return this.destinoRepository.delete(id);
+        return this.destinoRepository.softDelete(id);
     }
 }

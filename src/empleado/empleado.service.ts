@@ -43,7 +43,7 @@ export class EmpleadoService {
     }
 
     async remove(id: number): Promise<boolean> {
-        const result = await this.empleadoRepository.delete(id);
+        const result = await this.empleadoRepository.softDelete(id);
         return (result.affected ?? 0) > 0;
     }
 }

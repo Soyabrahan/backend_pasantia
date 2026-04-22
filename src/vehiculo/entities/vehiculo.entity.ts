@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, DeleteDateColumn } from 'typeorm';
 import { Empleado } from '../../empleado/entities/empleado.entity';
 
 @Entity()
@@ -24,4 +24,7 @@ export class Vehiculo {
     @ManyToMany(() => Empleado, (empleado) => empleado.vehiculos)
     @JoinTable({ name: 'empleado_vehiculo' })
     conductores: Empleado[];
+
+    @DeleteDateColumn()
+    deletedAt: Date;
 }

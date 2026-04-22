@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
 import { Destino } from '../../destino/entities/destino.entity';
 import { Empleado } from '../../empleado/entities/empleado.entity';
@@ -85,4 +85,7 @@ export class Pase {
 
     @Column({ nullable: true })
     usuarioId: number;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
 }

@@ -71,7 +71,7 @@ export class UsuarioService implements OnModuleInit {
     }
 
     async remove(id: number): Promise<boolean> {
-        const result = await this.usuarioRepository.delete(id);
+        const result = await this.usuarioRepository.softDelete(id);
         return (result.affected ?? 0) > 0;
     }
 

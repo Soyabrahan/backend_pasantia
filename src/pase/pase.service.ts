@@ -102,22 +102,40 @@ export class PaseService {
     }
 
     findAll() {
-        return this.paseRepository.find({ 
-            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo', 'usuario'],
-            order: { id: 'DESC' }
-        });
+        return this.paseRepository.createQueryBuilder('pase')
+            .withDeleted()
+            .leftJoinAndSelect('pase.solicitador', 'solicitador').withDeleted()
+            .leftJoinAndSelect('pase.conductor', 'conductor').withDeleted()
+            .leftJoinAndSelect('pase.autorizador', 'autorizador').withDeleted()
+            .leftJoinAndSelect('pase.despachador', 'despachador').withDeleted()
+            .leftJoinAndSelect('pase.vehiculo', 'vehiculo').withDeleted()
+            .leftJoinAndSelect('pase.destino', 'destino').withDeleted()
+            .leftJoinAndSelect('pase.equiposPases', 'equiposPases').withDeleted()
+            .leftJoinAndSelect('equiposPases.equipo', 'equipo').withDeleted()
+            .leftJoinAndSelect('pase.usuario', 'usuario').withDeleted()
+            .orderBy('pase.id', 'DESC')
+            .getMany();
     }
 
     async removeAll() {
-        await this.equiposPasesRepository.delete({});
-        return this.paseRepository.delete({});
+        await this.equiposPasesRepository.softDelete({});
+        return this.paseRepository.softDelete({});
     }
 
     findOne(id: number) {
-        return this.paseRepository.findOne({
-            where: { id },
-            relations: ['solicitador', 'conductor', 'autorizador', 'despachador', 'vehiculo', 'destino', 'equiposPases', 'equiposPases.equipo', 'usuario']
-        });
+        return this.paseRepository.createQueryBuilder('pase')
+            .withDeleted()
+            .leftJoinAndSelect('pase.solicitador', 'solicitador').withDeleted()
+            .leftJoinAndSelect('pase.conductor', 'conductor').withDeleted()
+            .leftJoinAndSelect('pase.autorizador', 'autorizador').withDeleted()
+            .leftJoinAndSelect('pase.despachador', 'despachador').withDeleted()
+            .leftJoinAndSelect('pase.vehiculo', 'vehiculo').withDeleted()
+            .leftJoinAndSelect('pase.destino', 'destino').withDeleted()
+            .leftJoinAndSelect('pase.equiposPases', 'equiposPases').withDeleted()
+            .leftJoinAndSelect('equiposPases.equipo', 'equipo').withDeleted()
+            .leftJoinAndSelect('pase.usuario', 'usuario').withDeleted()
+            .where('pase.id = :id', { id })
+            .getOne();
     }
 
     update(id: number, updatePaseDto: any) {
