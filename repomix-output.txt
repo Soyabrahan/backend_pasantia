@@ -1,0 +1,1732 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files and files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: src/**/*.ts, package.json, nest-cli.json, tsconfig.json
+- Files matching these patterns are excluded: dist/**, node_modules/**, test/**
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+src/
+  auth/
+    dto/
+      auth.dto.ts
+    auth.controller.ts
+    auth.module.ts
+    auth.service.ts
+    jwt.strategy.ts
+    local.strategy.ts
+  destino/
+    entities/
+      destino.entity.ts
+    destino.controller.ts
+    destino.module.ts
+    destino.service.ts
+  empleado/
+    entities/
+      empleado.entity.ts
+    empleado.controller.ts
+    empleado.module.ts
+    empleado.service.ts
+  equipo/
+    entities/
+      equipo.entity.ts
+    equipo.controller.ts
+    equipo.module.ts
+    equipo.service.ts
+  pase/
+    dto/
+      create-pase.dto.ts
+    entities/
+      equipos-pases.entity.ts
+      pase.entity.ts
+    pase.controller.ts
+    pase.module.ts
+    pase.service.ts
+  usuario/
+    entities/
+      usuario.entity.ts
+    usuario.controller.ts
+    usuario.module.ts
+    usuario.service.spec.ts
+    usuario.service.ts
+  vehiculo/
+    entities/
+      vehiculo.entity.ts
+    vehiculo.controller.ts
+    vehiculo.module.ts
+    vehiculo.service.ts
+  app.controller.spec.ts
+  app.controller.ts
+  app.module.ts
+  app.service.ts
+  main.ts
+nest-cli.json
+package.json
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/auth/dto/auth.dto.ts">
+import { ApiProperty } from '@nestjs/swagger';
+
+export class LoginDto {
+    @ApiProperty({ description: 'Nombre de usuario', example: 'admin' })
+    username: string;
+
+    @ApiProperty({ description: 'Contraseña del usuario', example: '123456' })
+    password: string;
+}
+
+export class RegisterDto {
+    @ApiProperty({ description: 'Nombre de usuario', example: 'abran' })
+    username: string;
+
+    @ApiProperty({ description: 'Contraseña del usuario', example: 'segura123' })
+    password: string;
+
+    @ApiProperty({ description: 'Nombre completo del usuario', example: 'Abran Ramos' })
+    nombre: string;
+}
+</file>
+
+<file path="src/auth/local.strategy.ts">
+import { Strategy } from 'passport-local';
+import { PassportStrategy } from '@nestjs/passport';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { AuthService } from './auth.service';
+
+@Injectable()
+export class LocalStrategy extends PassportStrategy(Strategy) {
+    constructor(private authService: AuthService) {
+        super({ usernameField: 'ficha', passwordField: 'contrasena' });
+    }
+
+    async validate(ficha: string, contrasena: string): Promise<any> {
+        const user = await this.authService.validateUser(ficha, contrasena);
+        if (!user) {
+            throw new UnauthorizedException();
+        }
+        return user;
+    }
+}
+</file>
+
+<file path="src/destino/destino.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { DestinoService } from './destino.service';
+import { DestinoController } from './destino.controller';
+import { Destino } from './entities/destino.entity';
+
+@Module({
+    imports: [TypeOrmModule.forFeature([Destino])],
+    controllers: [DestinoController],
+    providers: [DestinoService],
+})
+export class DestinoModule { }
+</file>
+
+<file path="src/empleado/empleado.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { EmpleadoService } from './empleado.service';
+import { EmpleadoController } from './empleado.controller';
+import { Empleado } from './entities/empleado.entity';
+
+@Module({
+    imports: [TypeOrmModule.forFeature([Empleado])],
+    controllers: [EmpleadoController],
+    providers: [EmpleadoService],
+    exports: [EmpleadoService],
+})
+export class EmpleadoModule { }
+</file>
+
+<file path="src/equipo/equipo.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { EquipoService } from './equipo.service';
+import { EquipoController } from './equipo.controller';
+import { Equipo } from './entities/equipo.entity';
+
+@Module({
+    imports: [TypeOrmModule.forFeature([Equipo])],
+    controllers: [EquipoController],
+    providers: [EquipoService],
+})
+export class EquipoModule { }
+</file>
+
+<file path="src/pase/dto/create-pase.dto.ts">
+import { ApiProperty } from '@nestjs/swagger';
+
+export class CreatePaseDto {
+    @ApiProperty({ description: 'Número único del pase', example: 'P-001' })
+    numeroPase: string;
+
+    @ApiProperty({ description: 'Concepto del pase (ej: DONACION, PRESTAMO)', example: 'DONACION' })
+    concepto: string;
+
+    @ApiProperty({ description: 'ID del empleado que solicita', example: 1 })
+    solicitadorId: number;
+
+    @ApiProperty({ description: 'ID del conductor (opcional)', example: 2, required: false })
+    conductorId?: number;
+
+    @ApiProperty({ description: 'ID del autorizador (opcional)', example: 3, required: false })
+    autorizadorId?: number;
+
+    @ApiProperty({ description: 'ID del despachador (opcional)', example: 4, required: false })
+    despachadorId?: number;
+
+    @ApiProperty({ description: 'ID del vehículo (opcional)', example: 1, required: false })
+    vehiculoId?: number;
+
+    @ApiProperty({ description: 'ID del destino (opcional)', example: 1, required: false })
+    destinoId?: number;
+
+    @ApiProperty({ description: 'Número de compra (opcional)', example: 'C-123', required: false })
+    numero_compra?: string;
+
+    @ApiProperty({ description: 'Tipo de pago (opcional)', example: 'CREDITO', required: false })
+    tipo_pago?: string;
+
+    @ApiProperty({ 
+        description: 'Lista de equipos asociados al pase', 
+        type: 'array',
+        items: {
+            type: 'object',
+            properties: {
+                equipoId: { type: 'number', example: 1 },
+                cantidad: { type: 'number', example: 2 }
+            }
+        },
+        required: false 
+    })
+    equipos?: { equipoId: number; cantidad: number }[];
+}
+
+export class UpdatePaseDto extends CreatePaseDto {}
+</file>
+
+<file path="src/usuario/usuario.service.spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { UsuarioService } from './usuario.service';
+
+describe('UsuarioService', () => {
+  let service: UsuarioService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [UsuarioService],
+    }).compile();
+
+    service = module.get<UsuarioService>(UsuarioService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+</file>
+
+<file path="src/vehiculo/vehiculo.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { VehiculoService } from './vehiculo.service';
+import { VehiculoController } from './vehiculo.controller';
+import { Vehiculo } from './entities/vehiculo.entity';
+
+@Module({
+    imports: [TypeOrmModule.forFeature([Vehiculo])],
+    controllers: [VehiculoController],
+    providers: [VehiculoService],
+})
+export class VehiculoModule { }
+</file>
+
+<file path="src/app.controller.spec.ts">
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});
+</file>
+
+<file path="src/app.controller.ts">
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+</file>
+
+<file path="src/app.service.ts">
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class AppService {
+  getHello(): string {
+    return 'Hello World!';
+  }
+}
+</file>
+
+<file path="nest-cli.json">
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true
+  }
+}
+</file>
+
+<file path="src/auth/auth.controller.ts">
+import { Controller, Request, Post, UseGuards, Body, Get } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { AuthService } from './auth.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
+
+@ApiTags('auth')
+@Controller('auth')
+export class AuthController {
+    constructor(private authService: AuthService) { }
+
+    @UseGuards(AuthGuard('local'))
+    @Post('login')
+    @ApiOperation({ summary: 'Iniciar sesión' })
+    @ApiBody({ type: LoginDto })
+    @ApiResponse({ status: 200, description: 'Inicio de sesión exitoso, devuelve el token JWT.' })
+    @ApiResponse({ status: 401, description: 'Credenciales inválidas.' })
+    async login(@Request() req) {
+        return this.authService.login(req.user);
+    }
+
+    @Post('register')
+    @ApiOperation({ summary: 'Registrar un nuevo usuario' })
+    @ApiResponse({ status: 201, description: 'Usuario registrado exitosamente.' })
+    async register(@Body() registerDto: RegisterDto) {
+        return this.authService.register(registerDto);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('profile')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Obtener el perfil del usuario autenticado' })
+    @ApiResponse({ status: 200, description: 'Datos del perfil del usuario.' })
+    getProfile(@Request() req) {
+        return req.user;
+    }
+}
+</file>
+
+<file path="src/auth/auth.module.ts">
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { UsuarioModule } from '../usuario/usuario.module';
+import { JwtStrategy } from './jwt.strategy';
+import { LocalStrategy } from './local.strategy';
+
+@Module({
+    imports: [
+        UsuarioModule,
+        PassportModule,
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            useFactory: async (configService: ConfigService) => ({
+                secret: configService.get<string>('JWT_SECRET'),
+                signOptions: { expiresIn: '12h' },
+            }),
+            inject: [ConfigService],
+        }),
+    ],
+    controllers: [AuthController],
+    providers: [AuthService, LocalStrategy, JwtStrategy],
+    exports: [AuthService],
+})
+export class AuthModule { }
+</file>
+
+<file path="src/auth/auth.service.ts">
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { UsuarioService } from '../usuario/usuario.service';
+import * as bcrypt from 'bcrypt';
+
+@Injectable()
+export class AuthService {
+    constructor(
+        private usuarioService: UsuarioService,
+        private jwtService: JwtService,
+    ) { }
+
+    async validateUser(ficha: string, pass: string): Promise<any> {
+        const user = await this.usuarioService.findOne(ficha);
+        if (user && (await bcrypt.compare(pass, user.contrasena))) {
+            const { contrasena, ...result } = user;
+            return result;
+        }
+        return null;
+    }
+
+    async login(user: any) {
+        const payload = { username: user.ficha, sub: user.id, role: user.rol };
+        return {
+            access_token: this.jwtService.sign(payload),
+        };
+    }
+
+    async register(userDto: any) {
+        return this.usuarioService.create(userDto);
+    }
+}
+</file>
+
+<file path="src/auth/jwt.strategy.ts">
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PassportStrategy } from '@nestjs/passport';
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { UsuarioService } from '../usuario/usuario.service';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+    constructor(
+        configService: ConfigService,
+        private usuarioService: UsuarioService,
+    ) {
+        super({
+            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ignoreExpiration: false,
+            secretOrKey: configService.get<string>('JWT_SECRET') || 'fallback_secret',
+        });
+    }
+
+    async validate(payload: any) {
+        const user = await this.usuarioService.findOneById(payload.sub);
+        if (!user) return null;
+        
+        const { contrasena, ...result } = user;
+        return result;
+    }
+}
+</file>
+
+<file path="src/destino/entities/destino.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn } from 'typeorm';
+
+@Entity()
+export class Destino {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    nombre: string;
+
+    @Column()
+    direccion: string;
+
+    @Column()
+    telefono: string;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/empleado/empleado.controller.ts">
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { EmpleadoService } from './empleado.service';
+import { Empleado } from './entities/empleado.entity';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
+@ApiTags('empleados')
+@Controller('empleados')
+export class EmpleadoController {
+    constructor(private readonly empleadoService: EmpleadoService) { }
+
+    @Post()
+    @ApiOperation({ summary: 'Registrar un nuevo empleado' })
+    create(@Body() createEmpleadoDto: Partial<Empleado>) {
+        return this.empleadoService.create(createEmpleadoDto);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Obtener todos los empleados' })
+    findAll() {
+        return this.empleadoService.findAll();
+    }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Actualizar datos de un empleado' })
+    update(@Param('id') id: string, @Body() updateEmpleadoDto: Partial<Empleado>) {
+        return this.empleadoService.update(+id, updateEmpleadoDto);
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Eliminar un empleado' })
+    remove(@Param('id') id: string) {
+        return this.empleadoService.remove(+id);
+    }
+}
+</file>
+
+<file path="src/equipo/equipo.controller.ts">
+import { Controller, Get, Post, Body } from '@nestjs/common';
+import { EquipoService } from './equipo.service';
+import { Equipo } from './entities/equipo.entity';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
+@ApiTags('equipos')
+@Controller('equipos')
+export class EquipoController {
+    constructor(private readonly equipoService: EquipoService) { }
+
+    @Post()
+    @ApiOperation({ summary: 'Registrar un nuevo equipo o herramienta' })
+    create(@Body() createEquipoDto: Partial<Equipo>) {
+        return this.equipoService.create(createEquipoDto);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Obtener todos los equipos registrados' })
+    findAll() {
+        return this.equipoService.findAll();
+    }
+}
+</file>
+
+<file path="src/equipo/equipo.service.ts">
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Equipo } from './entities/equipo.entity';
+
+@Injectable()
+export class EquipoService {
+    constructor(
+        @InjectRepository(Equipo)
+        private equipoRepository: Repository<Equipo>,
+    ) { }
+
+    create(createEquipoDto: Partial<Equipo>) {
+        return this.equipoRepository.save(createEquipoDto);
+    }
+
+    findAll() {
+        return this.equipoRepository.find();
+    }
+
+    async delete(id: number) {
+        return this.equipoRepository.softDelete(id);
+    }
+}
+</file>
+
+<file path="src/pase/entities/equipos-pases.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
+import { Pase } from './pase.entity';
+import { Equipo } from '../../equipo/entities/equipo.entity';
+
+// Entity for linking Pase and Equipo with quantity
+@Entity('equipos_pases')
+export class EquiposPases {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    paseId: number;
+
+    @Column()
+    equipoId: number;
+
+    @Column()
+    cantidad: number;
+
+    @ManyToOne(() => Pase, (pase) => pase.equiposPases)
+    @JoinColumn({ name: 'paseId' })
+    pase: Pase;
+
+    @ManyToOne(() => Equipo)
+    @JoinColumn({ name: 'equipoId' })
+    equipo: Equipo;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/pase/pase.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PaseService } from './pase.service';
+import { PaseController } from './pase.controller';
+import { Pase } from './entities/pase.entity';
+import { EquiposPases } from './entities/equipos-pases.entity';
+import { EquipoModule } from '../equipo/equipo.module';
+import { Equipo } from '../equipo/entities/equipo.entity';
+import { UsuarioModule } from '../usuario/usuario.module';
+import { VehiculoModule } from '../vehiculo/vehiculo.module';
+import { DestinoModule } from '../destino/destino.module';
+
+@Module({
+    imports: [
+        TypeOrmModule.forFeature([Pase, EquiposPases, Equipo]),
+        EquipoModule,
+        UsuarioModule,
+        VehiculoModule,
+        DestinoModule,
+    ],
+    controllers: [PaseController],
+    providers: [PaseService],
+})
+export class PaseModule { }
+</file>
+
+<file path="src/usuario/usuario.module.ts">
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsuarioService } from './usuario.service';
+import { UsuarioController } from './usuario.controller'; // Assuming controller exists or will be created
+import { Usuario } from './entities/usuario.entity';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([Usuario])],
+  controllers: [UsuarioController],
+  providers: [UsuarioService],
+  exports: [UsuarioService], // Export so AuthModule can use it
+})
+export class UsuarioModule { }
+</file>
+
+<file path="tsconfig.json">
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  }
+}
+</file>
+
+<file path="src/destino/destino.controller.ts">
+import { Controller, Get, Post, Body, Patch, Delete, Param } from '@nestjs/common';
+import { DestinoService } from './destino.service';
+import { Destino } from './entities/destino.entity';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
+@ApiTags('destinos')
+@Controller('destinos')
+export class DestinoController {
+    constructor(private readonly destinoService: DestinoService) { }
+
+    @Post()
+    @ApiOperation({ summary: 'Crear un nuevo destino' })
+    create(@Body() createDestinoDto: Partial<Destino>) {
+        return this.destinoService.create(createDestinoDto);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Obtener todos los destinos' })
+    findAll() {
+        return this.destinoService.findAll();
+    }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Actualizar un destino' })
+    update(@Param('id') id: string, @Body() updateDestinoDto: Partial<Destino>) {
+        return this.destinoService.update(+id, updateDestinoDto);
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Eliminar un destino' })
+    remove(@Param('id') id: string) {
+        return this.destinoService.delete(+id);
+    }
+}
+</file>
+
+<file path="src/empleado/entities/empleado.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, DeleteDateColumn } from 'typeorm';
+import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
+
+@Entity()
+export class Empleado {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({ unique: true })
+    ficha: string;
+
+    @Column()
+    nombre: string;
+
+    @Column({ nullable: true })
+    departamento: string;
+
+    @Column({ nullable: true })
+    cargo: string;
+
+    @Column({ nullable: true })
+    rol: string; // "Solicitante", "Conductor", "Despachador"
+
+    @ManyToMany(() => Vehiculo, (vehiculo) => vehiculo.conductores)
+    vehiculos: Vehiculo[];
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/vehiculo/vehiculo.controller.ts">
+import { Controller, Get, Post, Body, Patch, Delete, Param } from '@nestjs/common';
+import { VehiculoService } from './vehiculo.service';
+import { Vehiculo } from './entities/vehiculo.entity';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
+
+@ApiTags('vehiculos')
+@Controller('vehiculos')
+export class VehiculoController {
+    constructor(private readonly vehiculoService: VehiculoService) { }
+
+    @Post()
+    @ApiOperation({ summary: 'Registrar un nuevo vehículo' })
+    create(@Body() createVehiculoDto: Partial<Vehiculo>) {
+        return this.vehiculoService.create(createVehiculoDto);
+    }
+
+    @Get()
+    @ApiOperation({ summary: 'Obtener todos los vehículos registrados' })
+    findAll() {
+        return this.vehiculoService.findAll();
+    }
+    @Patch(':id')
+    @ApiOperation({ summary: 'Actualizar un vehículo' })
+    update(@Param('id') id: string, @Body() vehiculo: Partial<Vehiculo>) {
+        return this.vehiculoService.update(+id, vehiculo);
+    }
+    @Delete(':id')
+    @ApiOperation({ summary: 'Eliminar un vehículo' })
+    delete(@Param('id') id: string) {
+        return this.vehiculoService.delete(+id);
+    }
+}
+</file>
+
+<file path="src/empleado/empleado.service.ts">
+import { Injectable, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Empleado } from './entities/empleado.entity';
+
+@Injectable()
+export class EmpleadoService {
+    constructor(
+        @InjectRepository(Empleado)
+        private empleadoRepository: Repository<Empleado>,
+    ) { }
+
+    async findAll(): Promise<Empleado[]> {
+        return this.empleadoRepository.find();
+    }
+
+    async create(empleado: Partial<Empleado>): Promise<Empleado> {
+        const existing = await this.empleadoRepository.findOneBy({ ficha: empleado.ficha });
+        if (existing) {
+            throw new ConflictException(`La ficha ${empleado.ficha} ya pertenece al empleado: ${existing.nombre}`);
+        }
+        
+        // Normalizar a minúsculas
+        if (empleado.nombre) empleado.nombre = empleado.nombre.toLowerCase();
+        if (empleado.cargo) empleado.cargo = empleado.cargo.toLowerCase();
+        if (empleado.departamento) empleado.departamento = empleado.departamento.toLowerCase();
+
+        const newEmpleado = this.empleadoRepository.create(empleado);
+        return this.empleadoRepository.save(newEmpleado);
+    }
+
+    async update(id: number, data: Partial<Empleado>): Promise<Empleado | null> {
+        const empleado = await this.empleadoRepository.findOneBy({ id });
+        if (!empleado) return null;
+
+        // Normalizar a minúsculas
+        if (data.nombre) data.nombre = data.nombre.toLowerCase();
+        if (data.cargo) data.cargo = data.cargo.toLowerCase();
+        if (data.departamento) data.departamento = data.departamento.toLowerCase();
+
+        Object.assign(empleado, data);
+        return this.empleadoRepository.save(empleado);
+    }
+
+    async remove(id: number): Promise<boolean> {
+        const result = await this.empleadoRepository.softDelete(id);
+        return (result.affected ?? 0) > 0;
+    }
+}
+</file>
+
+<file path="src/equipo/entities/equipo.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn } from 'typeorm';
+
+@Entity()
+export class Equipo {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({ unique: true, nullable: true })
+    fmo: string;
+
+    @Column({ nullable: true })
+    marca: string;
+
+    @Column({ nullable: true })
+    nombre: string;
+
+    @Column({ type: 'text', unique: true, nullable: true })
+    serial: string;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/usuario/entities/usuario.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, DeleteDateColumn } from 'typeorm';
+import { Pase } from '../../pase/entities/pase.entity';
+
+@Entity()
+export class Usuario {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({ unique: true })
+    ficha: string;
+
+    @Column({ nullable: true })
+    nombre: string;
+
+    @Column()
+    contrasena: string;
+
+    @Column()
+    rol: string; // Access roles: "Administrador", "Usuario"
+
+    @OneToMany(() => Pase, (pase) => pase.usuario)
+    pases: Pase[];
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/usuario/usuario.controller.ts">
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { UsuarioService } from './usuario.service';
+import { Usuario } from './entities/usuario.entity';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+
+@ApiTags('usuarios')
+@ApiBearerAuth()
+@Controller('usuarios')
+export class UsuarioController {
+    constructor(private readonly usuarioService: UsuarioService) { }
+
+    @Post()
+    @ApiOperation({ summary: 'Crear un nuevo usuario administrador/operador' })
+    create(@Body() createUsuarioDto: Partial<Usuario>) {
+        return this.usuarioService.create(createUsuarioDto);
+    }
+
+    @Get('all')
+    @ApiOperation({ summary: 'Obtener todos los usuarios' })
+    findAll() {
+        return this.usuarioService.findAll();
+    }
+
+    @Get(':username')
+    @ApiOperation({ summary: 'Obtener un usuario por su nombre de usuario' })
+    findOne(@Param('username') username: string) {
+        return this.usuarioService.findOne(username);
+    }
+
+    @Patch('change-password/:id')
+    @ApiOperation({ summary: 'Cambiar la contraseña de un usuario' })
+    async changePassword(
+        @Param('id') id: string,
+        @Body() body: { currentPass: string; newPass: string },
+    ) {
+        const success = await this.usuarioService.changePassword(+id, body.currentPass, body.newPass);
+        if (!success) {
+            return { success: false, message: 'Contraseña actual incorrecta o usuario no encontrado' };
+        }
+        return { success: true };
+    }
+
+    @Patch('admin-reset-password/:id')
+    @ApiOperation({ summary: 'Resetear contraseña de usuario (Admin)' })
+    async adminResetPassword(@Param('id') id: string) {
+        const success = await this.usuarioService.adminResetPassword(+id);
+        return { success };
+    }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Actualizar datos básicos de un usuario' })
+    update(@Param('id') id: string, @Body() data: Partial<Usuario>) {
+        return this.usuarioService.update(+id, data);
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Eliminar un usuario' })
+    async remove(@Param('id') id: string) {
+        const success = await this.usuarioService.remove(+id);
+        return { success };
+    }
+}
+</file>
+
+<file path="src/usuario/usuario.service.ts">
+import { Injectable, OnModuleInit, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Usuario } from './entities/usuario.entity';
+import * as bcrypt from 'bcrypt';
+
+@Injectable()
+export class UsuarioService implements OnModuleInit {
+    constructor(
+        @InjectRepository(Usuario)
+        private usuarioRepository: Repository<Usuario>,
+    ) { }
+
+    async onModuleInit() {
+        const admin = await this.usuarioRepository.findOneBy({ ficha: '0000' });
+        if (!admin) {
+            const salt = await bcrypt.genSalt();
+            const hashedAdminPass = await bcrypt.hash('admin', salt);
+            await this.usuarioRepository.save({
+                ficha: '0000',
+                nombre: 'Administrador',
+                contrasena: hashedAdminPass,
+                rol: 'Administrador'
+            });
+            console.log('Usuario administrador por defecto creado: 0000 / admin');
+        }
+    }
+
+    async findOne(identifier: string): Promise<Usuario | null> {
+        return this.usuarioRepository.findOne({
+            where: [
+                { ficha: identifier },
+                { nombre: identifier }
+            ]
+        });
+    }
+
+    async findOneById(id: number): Promise<Usuario | null> {
+        return this.usuarioRepository.findOneBy({ id });
+    }
+
+    async create(usuario: Partial<Usuario>): Promise<Usuario> {
+        const existing = await this.usuarioRepository.findOneBy({ ficha: usuario.ficha });
+        if (existing) {
+            throw new ConflictException(`La ficha ${usuario.ficha} ya está registrada en el sistema.`);
+        }
+
+        if (usuario.contrasena) {
+            const salt = await bcrypt.genSalt();
+            usuario.contrasena = await bcrypt.hash(usuario.contrasena, salt);
+        }
+        const newUsuario = this.usuarioRepository.create(usuario);
+        return this.usuarioRepository.save(newUsuario);
+    }
+
+    async findAll(): Promise<Usuario[]> {
+        return this.usuarioRepository.find();
+    }
+
+    async update(id: number, data: Partial<Usuario>): Promise<Usuario | null> {
+        const usuario = await this.usuarioRepository.findOneBy({ id });
+        if (!usuario) return null;
+
+        if (data.contrasena) {
+            const salt = await bcrypt.genSalt();
+            data.contrasena = await bcrypt.hash(data.contrasena, salt);
+        }
+
+        Object.assign(usuario, data);
+        return this.usuarioRepository.save(usuario);
+    }
+
+    async remove(id: number): Promise<boolean> {
+        const result = await this.usuarioRepository.softDelete(id);
+        return (result.affected ?? 0) > 0;
+    }
+
+    async changePassword(id: number, currentPass: string, newPass: string): Promise<boolean> {
+        const usuario = await this.usuarioRepository.findOneBy({ id });
+        if (!usuario) return false;
+
+        const isMatch = await bcrypt.compare(currentPass, usuario.contrasena);
+        if (!isMatch) return false;
+
+        const salt = await bcrypt.genSalt();
+        usuario.contrasena = await bcrypt.hash(newPass, salt);
+        await this.usuarioRepository.save(usuario);
+        return true;
+    }
+
+    async adminResetPassword(id: number): Promise<boolean> {
+        const usuario = await this.usuarioRepository.findOneBy({ id });
+        if (!usuario) return false;
+
+        const salt = await bcrypt.genSalt();
+        // Reset to their own ficha as default password
+        usuario.contrasena = await bcrypt.hash(usuario.ficha, salt);
+        await this.usuarioRepository.save(usuario);
+        return true;
+    }
+}
+</file>
+
+<file path="src/vehiculo/entities/vehiculo.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, JoinTable, DeleteDateColumn } from 'typeorm';
+import { Empleado } from '../../empleado/entities/empleado.entity';
+
+@Entity()
+export class Vehiculo {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column()
+    placa: string;
+
+    @Column({ nullable: true })
+    marca: string;
+
+    @Column({ nullable: true })
+    modelo: string;
+
+    @Column({ default: false })
+    esFMO: boolean;
+
+    @Column({ nullable: true })
+    fmo: string;
+
+    @ManyToMany(() => Empleado, (empleado) => empleado.vehiculos)
+    @JoinTable({ name: 'empleado_vehiculo' })
+    conductores: Empleado[];
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/app.module.ts">
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { UsuarioModule } from './usuario/usuario.module';
+import { AuthModule } from './auth/auth.module';
+import { VehiculoModule } from './vehiculo/vehiculo.module';
+import { DestinoModule } from './destino/destino.module';
+import { EquipoModule } from './equipo/equipo.module';
+import { PaseModule } from './pase/pase.module';
+import { EmpleadoModule } from './empleado/empleado.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'sqlite',
+        database: 'database.sqlite',
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: true, // DEV only
+      }),
+      inject: [ConfigService],
+    }),
+    UsuarioModule,
+    AuthModule,
+    VehiculoModule,
+    DestinoModule,
+    EquipoModule,
+    PaseModule,
+    EmpleadoModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule { }
+</file>
+
+<file path="package.json">
+{
+  "name": "backend_pasantia",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/passport": "^11.0.5",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.6",
+    "@nestjs/typeorm": "^11.0.0",
+    "bcrypt": "^6.0.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "pg": "^8.18.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "sqlite3": "^5.1.7",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.28"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.7",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
+    "@types/supertest": "^6.0.2",
+    "@types/yargs": "^17.0.33",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^16.0.0",
+    "jest": "^30.0.0",
+    "prettier": "^3.4.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "ts-jest": "^29.2.5",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.20.0"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
+</file>
+
+<file path="src/destino/destino.service.ts">
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Destino } from './entities/destino.entity';
+
+@Injectable()
+export class DestinoService {
+    constructor(
+        @InjectRepository(Destino)
+        private destinoRepository: Repository<Destino>,
+    ) { }
+
+    create(createDestinoDto: Partial<Destino>) {
+        if (createDestinoDto.nombre) createDestinoDto.nombre = createDestinoDto.nombre.toLowerCase();
+        if (createDestinoDto.direccion) createDestinoDto.direccion = createDestinoDto.direccion.toLowerCase();
+        return this.destinoRepository.save(createDestinoDto);
+    }
+
+    findAll() {
+        return this.destinoRepository.find();
+    }
+
+    async update(id: number, data: Partial<Destino>) {
+        const d = await this.destinoRepository.findOneBy({ id });
+        if (!d) return null;
+        
+        if (data.nombre) data.nombre = data.nombre.toLowerCase();
+        if (data.direccion) data.direccion = data.direccion.toLowerCase();
+
+        Object.assign(d, data);
+        return this.destinoRepository.save(d);
+    }
+
+    async delete(id: number) {
+        return this.destinoRepository.softDelete(id);
+    }
+}
+</file>
+
+<file path="src/pase/entities/pase.entity.ts">
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
+import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
+import { Destino } from '../../destino/entities/destino.entity';
+import { Empleado } from '../../empleado/entities/empleado.entity';
+import { EquiposPases } from './equipos-pases.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
+
+@Entity()
+export class Pase {
+    @PrimaryGeneratedColumn()
+    id: number;
+
+    @Column({ unique: true })
+    numeroPase: string;
+
+    @Column()
+    concepto: string;
+
+    @CreateDateColumn()
+    fecha_emision: Date;
+
+    @ManyToOne(() => Empleado)
+    @JoinColumn({ name: 'solicitadorId' })
+    solicitador: Empleado;
+
+    @Column()
+    solicitadorId: number;
+
+    @ManyToOne(() => Empleado)
+    @JoinColumn({ name: 'conductorId' })
+    conductor: Empleado;
+
+    @Column({ nullable: true })
+    conductorId: number;
+
+    @ManyToOne(() => Empleado)
+    @JoinColumn({ name: 'autorizadorId' })
+    autorizador: Empleado;
+
+    @Column({ nullable: true })
+    autorizadorId: number;
+
+    @ManyToOne(() => Empleado)
+    @JoinColumn({ name: 'despachadorId' })
+    despachador: Empleado;
+
+    @Column({ nullable: true })
+    despachadorId: number;
+
+    @ManyToOne(() => Vehiculo)
+    @JoinColumn({ name: 'vehiculoId' })
+    vehiculo: Vehiculo;
+
+    @Column({ nullable: true })
+    vehiculoId: number;
+
+    @ManyToOne(() => Destino)
+    @JoinColumn({ name: 'destinoId' })
+    destino: Destino;
+
+    @Column({ nullable: true })
+    destinoId: number;
+
+    @Column({ nullable: true })
+    numero_compra: string;
+
+    @Column({ nullable: true })
+    tipo_pago: string;
+
+    @Column({ type: 'text', nullable: true })
+    observaciones: string;
+
+    @Column({ nullable: true })
+    tiempo_estimado: string;
+
+    @Column({ type: 'text', nullable: true })
+    solicitud: string;
+
+    @OneToMany(() => EquiposPases, (equiposPases) => equiposPases.pase)
+    equiposPases: EquiposPases[];
+
+    @ManyToOne(() => Usuario, (usuario) => usuario.pases)
+    @JoinColumn({ name: 'usuarioId' })
+    usuario: Usuario;
+
+    @Column({ nullable: true })
+    usuarioId: number;
+
+    @DeleteDateColumn()
+    deletedAt: Date;
+}
+</file>
+
+<file path="src/pase/pase.controller.ts">
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, Delete, Request } from '@nestjs/common';
+import { PaseService } from './pase.service';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { CreatePaseDto, UpdatePaseDto } from './dto/create-pase.dto';
+
+@ApiTags('pases')
+@ApiBearerAuth()
+@Controller('pases')
+export class PaseController {
+    constructor(private readonly paseService: PaseService) { }
+
+    @ApiOperation({ summary: 'Obtener el último número de pase registrado' })
+    @ApiResponse({ status: 200, description: 'Número del último pase.' })
+    @Get('ultimo-numero')
+    findLastNumero() {
+        return this.paseService.findLastNumero();
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Crear un nuevo pase' })
+    @ApiResponse({ status: 201, description: 'El pase ha sido creado exitosamente.' })
+    @Post()
+    create(@Body() createPaseDto: CreatePaseDto, @Request() req) {
+        const userId = req.user.id;
+        return this.paseService.create(createPaseDto, userId);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Obtener todos los pases' })
+    @ApiResponse({ status: 200, description: 'Lista de todos los pases.' })
+    @Get()
+    findAll() {
+        return this.paseService.findAll();
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Obtener un pase por ID' })
+    @ApiResponse({ status: 200, description: 'El pase encontrado.' })
+    @Get(':id')
+    findOne(@Param('id') id: string) {
+        return this.paseService.findOne(+id);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Actualizar un pase' })
+    @ApiResponse({ status: 200, description: 'El pase ha sido actualizado.' })
+    @Patch(':id')
+    update(@Param('id') id: string, @Body() updatePaseDto: UpdatePaseDto) {
+        return this.paseService.update(+id, updatePaseDto);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Eliminar todos los pases (Limpieza)' })
+    @ApiResponse({ status: 200, description: 'Todos los pases han sido eliminados.' })
+    @Delete()
+    removeAll() {
+        return this.paseService.removeAll();
+    }
+}
+</file>
+
+<file path="src/main.ts">
+import { NestFactory } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Configuracion de Swagger
+  const config = new DocumentBuilder()
+    .setTitle('Proyecto Pasantia API')
+    .setDescription('Documentación de la API para el sistema de pases de la pasantía.')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+
+  // 1. Configuración de CORS más robusta
+  app.enableCors({
+    origin: [
+      'http://serverlaptop.local',   // Permite el nombre de red
+      'http://serverlaptop',         // Permite el nombre corto
+      'http://localhost:3000',       // Permite desarrollo local
+      'http://192.168.1.121',       // Tu IP actual por si acaso
+    ], 
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
+  // 2. Escuchar en 0.0.0.0 es la clave para la red de Ferrominera
+  const port = process.env.PORT ?? 3001;
+  await app.listen(port, '0.0.0.0'); 
+  
+  console.log(`Backend corriendo en: http://192.168.1.10:${port}`);
+  console.log(`Documentación disponible en: http://192.168.1.10:${port}/docs (interna) o http://serverlaptop.local/api/docs (vía proxy)`);
+}
+bootstrap();
+</file>
+
+<file path="src/vehiculo/vehiculo.service.ts">
+import { ConflictException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Not, Repository } from 'typeorm';
+import { Vehiculo } from './entities/vehiculo.entity';
+
+@Injectable()
+export class VehiculoService {
+    constructor(
+        @InjectRepository(Vehiculo)
+        private vehiculoRepository: Repository<Vehiculo>,
+    ) { }
+
+    async create(createVehiculoDto: Partial<Vehiculo>) {
+        const { conductores, ...rest } = createVehiculoDto;
+        
+        // Normalizar a minúsculas
+        if (rest.marca) rest.marca = rest.marca.toLowerCase();
+        if (rest.modelo) rest.modelo = rest.modelo.toLowerCase();
+        if (rest.placa) rest.placa = rest.placa.toLowerCase();
+        if (rest.fmo) rest.fmo = rest.fmo.toLowerCase();
+
+        const saved = await this.vehiculoRepository.save(rest);
+        
+        if (conductores && conductores.length > 0) {
+            // Verificar si alguno de los conductores ya tiene un vehículo asignado
+            for (const c of conductores) {
+                const existingAssignment = await this.vehiculoRepository.findOne({
+                    where: { conductores: { id: c.id } }
+                });
+                if (existingAssignment) {
+                    throw new ConflictException(`El conductor con ID ${c.id} ya tiene el vehículo ${existingAssignment.placa} asignado.`);
+                }
+            }
+
+            const v = await this.vehiculoRepository.findOne({ where: { id: saved.id }, relations: ['conductores'] });
+            if (v) {
+                v.conductores = conductores;
+                await this.vehiculoRepository.save(v);
+            }
+        }
+        return this.findOneComplete(saved.id);
+    }
+
+    findAll() {
+        return this.vehiculoRepository.find({ relations: ['conductores'] });
+    }
+
+    private findOneComplete(id: number) {
+        return this.vehiculoRepository.findOne({
+            where: { id },
+            relations: ['conductores']
+        });
+    }
+
+    async update(id: number, vehiculoData: Partial<Vehiculo>) {
+        const { conductores, id: _id, ...rest } = vehiculoData as any;
+        delete rest.conductorId;
+        
+        // Normalizar a minúsculas
+        if (rest.marca) rest.marca = rest.marca.toLowerCase();
+        if (rest.modelo) rest.modelo = rest.modelo.toLowerCase();
+        if (rest.placa) rest.placa = rest.placa.toLowerCase();
+        if (rest.fmo) rest.fmo = rest.fmo.toLowerCase();
+
+        const v = await this.vehiculoRepository.findOne({ where: { id }, relations: ['conductores'] });
+        if (!v) return null;
+
+        // Actualizamos los campos básicos
+        Object.assign(v, rest);
+
+        // Si hay conductores, actualizamos la relación
+        if (conductores) {
+            // Verificar si alguno de los conductores ya tiene otro vehículo asignado
+            for (const c of conductores) {
+                const existingAssignment = await this.vehiculoRepository.findOne({
+                    where: { 
+                        id: Not(id), // Ignorar el vehículo actual
+                        conductores: { id: c.id } 
+                    }
+                });
+                if (existingAssignment) {
+                    throw new ConflictException(`El conductor ya tiene el vehículo ${existingAssignment.placa} asignado.`);
+                }
+            }
+            v.conductores = conductores;
+        }
+        
+        await this.vehiculoRepository.save(v);
+        
+        return this.findOneComplete(id);
+    }
+    async delete(id: number) {
+        return await this.vehiculoRepository.softDelete(id);
+    }
+}
+</file>
+
+<file path="src/pase/pase.service.ts">
+import { Injectable, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Pase } from './entities/pase.entity';
+import { EquiposPases } from './entities/equipos-pases.entity';
+import { Equipo } from '../equipo/entities/equipo.entity';
+
+@Injectable()
+export class PaseService {
+    constructor(
+        @InjectRepository(Pase)
+        private paseRepository: Repository<Pase>,
+        @InjectRepository(EquiposPases)
+        private equiposPasesRepository: Repository<EquiposPases>,
+        @InjectRepository(Equipo)
+        private equipoRepository: Repository<Equipo>,
+    ) { }
+
+    async create(createPaseDto: any, userId?: number) {
+        // Transactional logic would be better here
+        const { equipos, ...paseData } = createPaseDto;
+
+        try {
+            // Save Pase
+            const pase = (this.paseRepository.create({ ...paseData, usuarioId: userId } as any) as unknown) as Pase;
+            const savedPase = await this.paseRepository.save(pase);
+
+            // Save EquiposRelation
+            if (equipos && equipos.length > 0) {
+                const equiposEntities: any[] = [];
+                for (const e of equipos) {
+                    if (e.fmos && e.fmos.length > 0) {
+                        for (const f of e.fmos) {
+                            // Find existing or create
+                            let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
+                            if (!equipoItem) {
+                                equipoItem = await this.equipoRepository.save({
+                                    fmo: f,
+                                    marca: e.marca ? e.marca.toLowerCase() : undefined,
+                                    nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
+                                    serial: undefined
+                                } as any);
+                            }
+                            
+                            if (equipoItem) {
+                                equiposEntities.push({
+                                    paseId: savedPase.id,
+                                    equipoId: equipoItem.id,
+                                    cantidad: 1
+                                });
+                            }
+                        }
+                    } else if (e.seriales && e.seriales.length > 0) {
+                        for (const s of e.seriales) {
+                            // Find existing or create
+                            let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
+                            if (!equipoItem) {
+                                equipoItem = await this.equipoRepository.save({
+                                    fmo: undefined,
+                                    marca: e.marca ? e.marca.toLowerCase() : undefined,
+                                    nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
+                                    serial: s
+                                } as any);
+                            }
+
+                            if (equipoItem) {
+                                equiposEntities.push({
+                                    paseId: savedPase.id,
+                                    equipoId: equipoItem.id,
+                                    cantidad: 1
+                                });
+                            }
+                        }
+                    } else {
+                        // "Ninguno" seleccionado (generic items)
+                        const savedEquipo: any = await this.equipoRepository.save({
+                            fmo: undefined,
+                            marca: e.marca ? e.marca.toLowerCase() : undefined,
+                            nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
+                            serial: undefined
+                        } as any);
+                        if (savedEquipo) {
+                            equiposEntities.push({
+                                paseId: savedPase.id,
+                                equipoId: savedEquipo.id,
+                                cantidad: e.cantidad || 1
+                            });
+                        }
+                    }
+                }
+                await this.equiposPasesRepository.save(equiposEntities);
+            }
+
+            return this.findOne(savedPase.id);
+        } catch (error) {
+            console.error('Error in PaseService create:', error);
+            if (error?.message?.includes('numeroPase')) {
+                throw new ConflictException('El número de pase ya existe.');
+            }
+            throw error;
+        }
+    }
+
+    findAll() {
+        return this.paseRepository.createQueryBuilder('pase')
+            .withDeleted()
+            .leftJoinAndSelect('pase.solicitador', 'solicitador').withDeleted()
+            .leftJoinAndSelect('pase.conductor', 'conductor').withDeleted()
+            .leftJoinAndSelect('pase.autorizador', 'autorizador').withDeleted()
+            .leftJoinAndSelect('pase.despachador', 'despachador').withDeleted()
+            .leftJoinAndSelect('pase.vehiculo', 'vehiculo').withDeleted()
+            .leftJoinAndSelect('pase.destino', 'destino').withDeleted()
+            .leftJoinAndSelect('pase.equiposPases', 'equiposPases').withDeleted()
+            .leftJoinAndSelect('equiposPases.equipo', 'equipo').withDeleted()
+            .leftJoinAndSelect('pase.usuario', 'usuario').withDeleted()
+            .orderBy('pase.id', 'DESC')
+            .getMany();
+    }
+
+    async removeAll() {
+        await this.equiposPasesRepository.softDelete({});
+        return this.paseRepository.softDelete({});
+    }
+
+    findOne(id: number) {
+        return this.paseRepository.createQueryBuilder('pase')
+            .withDeleted()
+            .leftJoinAndSelect('pase.solicitador', 'solicitador').withDeleted()
+            .leftJoinAndSelect('pase.conductor', 'conductor').withDeleted()
+            .leftJoinAndSelect('pase.autorizador', 'autorizador').withDeleted()
+            .leftJoinAndSelect('pase.despachador', 'despachador').withDeleted()
+            .leftJoinAndSelect('pase.vehiculo', 'vehiculo').withDeleted()
+            .leftJoinAndSelect('pase.destino', 'destino').withDeleted()
+            .leftJoinAndSelect('pase.equiposPases', 'equiposPases').withDeleted()
+            .leftJoinAndSelect('equiposPases.equipo', 'equipo').withDeleted()
+            .leftJoinAndSelect('pase.usuario', 'usuario').withDeleted()
+            .where('pase.id = :id', { id })
+            .getOne();
+    }
+
+    update(id: number, updatePaseDto: any) {
+        return this.paseRepository.update(id, updatePaseDto);
+    }
+
+    async findLastNumero() {
+        const lastPase = await this.paseRepository.findOne({
+            where: {},
+            order: { id: 'DESC' }
+        });
+        return { numeroPase: lastPase ? lastPase.numeroPase : null };
+    }
+}
+</file>
+
+</files>
