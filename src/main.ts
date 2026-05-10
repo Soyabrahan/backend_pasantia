@@ -18,10 +18,11 @@ async function bootstrap() {
   // 1. Configuración de CORS más robusta
   app.enableCors({
     origin: [
-      'http://serverlaptop.local',   // Permite el nombre de red
-      'http://serverlaptop',         // Permite el nombre corto
-      'http://localhost:3000',       // Permite desarrollo local
-      'http://192.168.1.121',       // Tu IP actual por si acaso
+      'http://10.200.23.71',         // IP de la red de Ferrominera
+      'http://serverlaptop.local',
+      'http://serverlaptop',
+      'http://localhost:3000',
+      'app://-',                     // Para aplicación Electron empaquetada
     ], 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
@@ -31,7 +32,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3001;
   await app.listen(port, '0.0.0.0'); 
   
-  console.log(`Backend corriendo en: http://192.168.1.10:${port}`);
-  console.log(`Documentación disponible en: http://192.168.1.10:${port}/docs (interna) o http://serverlaptop.local/api/docs (vía proxy)`);
+  console.log(`Backend corriendo en: http://192.168.1.18:${port}`);
+  console.log(`Documentación disponible en: http://192.168.1.18:${port}/docs (interna) o http://serverlaptop.local/api/docs (vía proxy)`);
 }
 bootstrap();
