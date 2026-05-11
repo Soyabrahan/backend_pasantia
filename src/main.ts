@@ -22,6 +22,8 @@ async function bootstrap() {
       'http://serverlaptop.local',
       'http://serverlaptop',
       'http://localhost:3000',
+      'http://192.168.1.7',          // IP directa
+      'http://192.168.1.7:3000',     // IP para pruebas sin Nginx
       'app://-',                     // Para aplicación Electron empaquetada
     ], 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -32,7 +34,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3001;
   await app.listen(port, '0.0.0.0'); 
   
-  console.log(`Backend corriendo en: http://192.168.1.18:${port}`);
-  console.log(`Documentación disponible en: http://192.168.1.18:${port}/docs (interna) o http://serverlaptop.local/api/docs (vía proxy)`);
+  console.log(`Backend corriendo en: http://192.168.1.7:${port}`);
+  console.log(`Documentación disponible en: http://192.168.1.7:${port}/docs`);
 }
 bootstrap();
