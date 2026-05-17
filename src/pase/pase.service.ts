@@ -17,7 +17,6 @@ export class PaseService {
     ) { }
 
     async create(createPaseDto: any, userId?: number) {
-        // Transactional logic would be better here
         const { equipos, ...paseData } = createPaseDto;
 
         try {
@@ -29,16 +28,23 @@ export class PaseService {
             if (equipos && equipos.length > 0) {
                 const equiposEntities: any[] = [];
                 for (const e of equipos) {
+                    const brand = e.marca ? e.marca.toLowerCase() : undefined;
+                    const name = e.descripcion ? e.descripcion.toLowerCase() : undefined;
+
                     if (e.fmos && e.fmos.length > 0) {
                         for (const f of e.fmos) {
                             // Find existing or create
                             let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
-                            if (!equipoItem) {
+                            if (equipoItem) {
+                                // Update existing equipment attributes
+                                equipoItem.marca = brand;
+                                equipoItem.nombre = name;
+                                equipoItem = await this.equipoRepository.save(equipoItem);
+                            } else {
                                 equipoItem = await this.equipoRepository.save({
                                     fmo: f,
-                                    marca: e.marca ? e.marca.toLowerCase() : undefined,
-                                    nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
-                                    serial: undefined
+                                    marca: brand,
+                                    nombre: name,
                                 } as any);
                             }
                             
@@ -54,12 +60,16 @@ export class PaseService {
                         for (const s of e.seriales) {
                             // Find existing or create
                             let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
-                            if (!equipoItem) {
+                            if (equipoItem) {
+                                // Update existing
+                                equipoItem.marca = brand;
+                                equipoItem.nombre = name;
+                                equipoItem = await this.equipoRepository.save(equipoItem);
+                            } else {
                                 equipoItem = await this.equipoRepository.save({
-                                    fmo: undefined,
-                                    marca: e.marca ? e.marca.toLowerCase() : undefined,
-                                    nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
-                                    serial: s
+                                    serial: s,
+                                    marca: brand,
+                                    nombre: name,
                                 } as any);
                             }
 
@@ -74,10 +84,8 @@ export class PaseService {
                     } else {
                         // "Ninguno" seleccionado (generic items)
                         const savedEquipo: any = await this.equipoRepository.save({
-                            fmo: undefined,
-                            marca: e.marca ? e.marca.toLowerCase() : undefined,
-                            nombre: e.descripcion ? e.descripcion.toLowerCase() : undefined,
-                            serial: undefined
+                            marca: brand,
+                            nombre: name,
                         } as any);
                         if (savedEquipo) {
                             equiposEntities.push({
@@ -88,7 +96,9 @@ export class PaseService {
                         }
                     }
                 }
-                await this.equiposPasesRepository.save(equiposEntities);
+                if (equiposEntities.length > 0) {
+                    await this.equiposPasesRepository.save(equiposEntities);
+                }
             }
 
             return this.findOne(savedPase.id);
@@ -97,6 +107,128 @@ export class PaseService {
             if (error?.message?.includes('numeroPase')) {
                 throw new ConflictException('El número de pase ya existe.');
             }
+            throw error;
+        }
+    }
+
+    async update(id: number, updatePaseDto: any) {
+        const { equipos, ...paseData } = updatePaseDto;
+
+        try {
+            // Buscamos si el pase existe
+            const existingPase = await this.paseRepository.findOneBy({ id });
+            if (!existingPase) {
+                throw new Error(`Pase con ID ${id} no encontrado`);
+            }
+
+            // Actualizamos los campos básicos del pase
+            await this.paseRepository.save({
+                ...existingPase,
+                ...paseData,
+                id: id
+            });
+
+            if (equipos) {
+                // Eliminar relaciones existentes
+                await this.equiposPasesRepository.delete({ paseId: id });
+
+                // Recrear relaciones
+                if (equipos.length > 0) {
+                    const equiposEntities: any[] = [];
+                    for (const e of equipos) {
+                        const brand = e.marca ? e.marca.toLowerCase() : undefined;
+                        const name = e.descripcion ? e.descripcion.toLowerCase() : undefined;
+
+                        if (e.fmos && e.fmos.length > 0) {
+                            for (const f of e.fmos) {
+                                let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
+                                if (equipoItem) {
+                                    // ACTUALIZAMOS el equipo existente
+                                    equipoItem.marca = brand;
+                                    equipoItem.nombre = name;
+                                    equipoItem = await this.equipoRepository.save(equipoItem);
+                                } else {
+                                    // CREAMOS nuevo equipo con FMO
+                                    equipoItem = await this.equipoRepository.save({
+                                        fmo: f,
+                                        marca: brand,
+                                        nombre: name,
+                                    } as any);
+                                }
+                                
+                                if (equipoItem) {
+                                    equiposEntities.push({
+                                        paseId: id,
+                                        equipoId: equipoItem.id,
+                                        cantidad: 1
+                                    });
+                                }
+                            }
+                        } else if (e.seriales && e.seriales.length > 0) {
+                            for (const s of e.seriales) {
+                                let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
+                                if (equipoItem) {
+                                    // ACTUALIZAMOS el equipo existente
+                                    equipoItem.marca = brand;
+                                    equipoItem.nombre = name;
+                                    equipoItem = await this.equipoRepository.save(equipoItem);
+                                } else {
+                                    // CREAMOS nuevo equipo con Serial
+                                    equipoItem = await this.equipoRepository.save({
+                                        serial: s,
+                                        marca: brand,
+                                        nombre: name,
+                                    } as any);
+                                }
+
+                                if (equipoItem) {
+                                    equiposEntities.push({
+                                        paseId: id,
+                                        equipoId: equipoItem.id,
+                                        cantidad: 1
+                                    });
+                                }
+                            }
+                        } else {
+                            // Item genérico (sin FMO ni Serial)
+                            let equipoItem: any = null;
+                            
+                            // Si tiene un ID de equipo previo, intentamos actualizarlo
+                            if (e.id && !isNaN(Number(e.id))) {
+                                equipoItem = await this.equipoRepository.findOneBy({ id: Number(e.id) });
+                                if (equipoItem) {
+                                    equipoItem.marca = brand;
+                                    equipoItem.nombre = name;
+                                    equipoItem = await this.equipoRepository.save(equipoItem);
+                                }
+                            }
+
+                            // Si no se encontró o no tenía ID, creamos uno nuevo
+                            if (!equipoItem) {
+                                equipoItem = await this.equipoRepository.save({
+                                    marca: brand,
+                                    nombre: name,
+                                } as any);
+                            }
+
+                            if (equipoItem) {
+                                equiposEntities.push({
+                                    paseId: id,
+                                    equipoId: equipoItem.id,
+                                    cantidad: e.cantidad || 1
+                                });
+                            }
+                        }
+                    }
+                    if (equiposEntities.length > 0) {
+                        await this.equiposPasesRepository.save(equiposEntities);
+                    }
+                }
+            }
+
+            return this.findOne(id);
+        } catch (error) {
+            console.error('Error in PaseService update:', error);
             throw error;
         }
     }
@@ -136,10 +268,6 @@ export class PaseService {
             .leftJoinAndSelect('pase.usuario', 'usuario').withDeleted()
             .where('pase.id = :id', { id })
             .getOne();
-    }
-
-    update(id: number, updatePaseDto: any) {
-        return this.paseRepository.update(id, updatePaseDto);
     }
 
     async findLastNumero() {

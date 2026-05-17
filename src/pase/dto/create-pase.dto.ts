@@ -31,6 +31,15 @@ export class CreatePaseDto {
     @ApiProperty({ description: 'Tipo de pago (opcional)', example: 'CREDITO', required: false })
     tipo_pago?: string;
 
+    @ApiProperty({ description: 'Observaciones (opcional)', example: 'Entregar con cuidado', required: false })
+    observaciones?: string;
+
+    @ApiProperty({ description: 'Tiempo estimado (opcional)', example: '3 días', required: false })
+    tiempo_estimado?: string;
+
+    @ApiProperty({ description: 'Solicitud (opcional)', example: 'Reparación urgente', required: false })
+    solicitud?: string;
+
     @ApiProperty({ 
         description: 'Lista de equipos asociados al pase', 
         type: 'array',

@@ -1,14 +1,32 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Empleado } from './entities/empleado.entity';
 
 @Injectable()
-export class EmpleadoService {
+export class EmpleadoService implements OnModuleInit {
     constructor(
         @InjectRepository(Empleado)
         private empleadoRepository: Repository<Empleado>,
     ) { }
+
+    async onModuleInit() {
+        // Verificar si existe el autorizador por defecto (Gerente)
+        const authorizer = await this.empleadoRepository.findOne({
+            where: { ficha: '15508' }
+        });
+
+        if (!authorizer) {
+            await this.empleadoRepository.save({
+                ficha: '15508',
+                nombre: 'carmen marquez',
+                cargo: 'gerente de telemática (e)',
+                departamento: 'telemática',
+                rol: 'autorizador'
+            });
+            console.log('Autorizador (Gerente) por defecto creado: Carmen Marquez');
+        }
+    }
 
     async findAll(): Promise<Empleado[]> {
         return this.empleadoRepository.find();
