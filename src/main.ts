@@ -19,7 +19,15 @@ async function bootstrap() {
 
   // 1. Configuración de CORS más robusta
   app.enableCors({
-    origin: true,
+    origin: [
+      'http://10.200.23.71',         // IP de la red de Ferrominera
+      'http://serverlaptop.local',
+      'http://serverlaptop',
+      'http://localhost:3000',
+      'http://192.168.1.7',          // IP directa
+      'http://192.168.1.7:3000',     // IP para pruebas sin Nginx
+      'app://-',                     // Para aplicación Electron empaquetada
+    ], 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization,X-Requested-With',
     credentials: true,
@@ -27,9 +35,9 @@ async function bootstrap() {
 
   // 2. Escuchar en 0.0.0.0 es la clave para la red de Ferrominera
   const port = process.env.PORT ?? 3001;
-  await app.listen(port, '0.0.0.0');
-
-  console.log(`Backend corriendo en: http://localhost:${port}`);
-  console.log(`Documentación disponible en: http://localhost:${port}/docs`);
+  await app.listen(port, '0.0.0.0'); 
+  
+  console.log(`Backend corriendo en: http://192.168.1.7:${port}`);
+  console.log(`Documentación disponible en: http://192.168.1.7:${port}/docs`);
 }
 bootstrap();
