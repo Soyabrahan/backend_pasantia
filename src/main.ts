@@ -37,7 +37,7 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3001;
   await app.listen(port, '0.0.0.0'); 
   
-  console.log(`Backend corriendo en: http://192.168.1.7:${port}`);
-  console.log(`Documentación disponible en: http://192.168.1.7:${port}/docs`);
+  console.log(`Backend corriendo en: http://localhost:${port}`);
+  console.log(`Documentación disponible en: http://localhost:${port}/docs`);
 }
 bootstrap();
