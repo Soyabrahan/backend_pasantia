@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -10,6 +11,8 @@ import { DestinoModule } from './destino/destino.module';
 import { EquipoModule } from './equipo/equipo.module';
 import { PaseModule } from './pase/pase.module';
 import { EmpleadoModule } from './empleado/empleado.module';
+import { AuditModule } from './audit/audit.module';
+import { AuditInterceptor } from './audit/audit.interceptor';
 
 @Module({
   imports: [
@@ -31,8 +34,15 @@ import { EmpleadoModule } from './empleado/empleado.module';
     EquipoModule,
     PaseModule,
     EmpleadoModule,
+    AuditModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
+    },
+  ],
 })
 export class AppModule { }

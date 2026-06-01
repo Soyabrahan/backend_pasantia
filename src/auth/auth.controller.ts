@@ -34,4 +34,15 @@ export class AuthController {
     getProfile(@Request() req) {
         return req.user;
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('logout')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Cerrar sesión' })
+    @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente.' })
+    logout(@Request() req) {
+        // En JWT no se almacena sesión en servidor, pero este endpoint
+        // permite al AuditInterceptor registrar el cierre de sesión.
+        return { message: 'Sesión cerrada correctamente' };
+    }
 }
