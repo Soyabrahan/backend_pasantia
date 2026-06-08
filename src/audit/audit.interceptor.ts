@@ -11,7 +11,8 @@ export class AuditInterceptor implements NestInterceptor {
         const req = context.switchToHttp().getRequest();
         const { method, url, user } = req;
 
-        // Solo nos interesan las consultas donde se modifican datos o inicio/cierre de sesión
+        // Se excluyen rutas que ya tienen logs manuales detallados
+        if (url === '/auditoria/log' || (method === 'PATCH' && /^\/pases\/\d+$/.test(url))) return next.handle();
         const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
         
         return next.handle().pipe(

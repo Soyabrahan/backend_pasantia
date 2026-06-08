@@ -17,10 +17,10 @@ export class AuditLog {
     @Column()
     accion: string;
 
-    @Column()
+    @Column({ nullable: true })
     metodo: string;
 
-    @Column()
+    @Column({ nullable: true })
     ruta: string;
 
     @CreateDateColumn()

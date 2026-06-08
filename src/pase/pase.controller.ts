@@ -46,8 +46,8 @@ export class PaseController {
     @ApiOperation({ summary: 'Actualizar un pase' })
     @ApiResponse({ status: 200, description: 'El pase ha sido actualizado.' })
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updatePaseDto: UpdatePaseDto) {
-        return this.paseService.update(+id, updatePaseDto);
+    update(@Param('id') id: string, @Body() updatePaseDto: UpdatePaseDto, @Request() req) {
+        return this.paseService.update(+id, updatePaseDto, req.user);
     }
 
     @UseGuards(AuthGuard('jwt'))

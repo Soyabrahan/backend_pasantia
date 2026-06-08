@@ -9,6 +9,7 @@ import { Equipo } from '../equipo/entities/equipo.entity';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { VehiculoModule } from '../vehiculo/vehiculo.module';
 import { DestinoModule } from '../destino/destino.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { DestinoModule } from '../destino/destino.module';
         UsuarioModule,
         VehiculoModule,
         DestinoModule,
+        AuditModule,
     ],
     controllers: [PaseController],
     providers: [PaseService],
