@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
 import { Destino } from '../../destino/entities/destino.entity';
 import { Empleado } from '../../empleado/entities/empleado.entity';
@@ -18,6 +18,9 @@ export class Pase {
 
     @CreateDateColumn()
     fecha_emision: Date;
+
+    @UpdateDateColumn()
+    updatedAt: Date;
 
     @ManyToOne(() => Empleado)
     @JoinColumn({ name: 'solicitadorId' })
