@@ -6,6 +6,7 @@ import { Pase } from './entities/pase.entity';
 import { EquiposPases } from './entities/equipos-pases.entity';
 import { EquipoModule } from '../equipo/equipo.module';
 import { Equipo } from '../equipo/entities/equipo.entity';
+import { Marca } from '../marca/entities/marca.entity';
 import { UsuarioModule } from '../usuario/usuario.module';
 import { VehiculoModule } from '../vehiculo/vehiculo.module';
 import { DestinoModule } from '../destino/destino.module';
@@ -13,7 +14,7 @@ import { AuditModule } from '../audit/audit.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Pase, EquiposPases, Equipo]),
+        TypeOrmModule.forFeature([Pase, EquiposPases, Equipo, Marca]),
         EquipoModule,
         UsuarioModule,
         VehiculoModule,

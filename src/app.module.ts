@@ -12,6 +12,7 @@ import { EquipoModule } from './equipo/equipo.module';
 import { PaseModule } from './pase/pase.module';
 import { EmpleadoModule } from './empleado/empleado.module';
 import { AuditModule } from './audit/audit.module';
+import { MarcaModule } from './marca/marca.module';
 import { AuditInterceptor } from './audit/audit.interceptor';
 
 @Module({
@@ -35,6 +36,7 @@ import { AuditInterceptor } from './audit/audit.interceptor';
     PaseModule,
     EmpleadoModule,
     AuditModule,
+    MarcaModule,
   ],
   controllers: [AppController],
   providers: [

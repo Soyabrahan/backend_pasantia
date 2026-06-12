@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, HttpCode, Req, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 
 @ApiTags('auditoria')
@@ -12,9 +12,14 @@ export class AuditController {
     @Get()
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Obtener los registros de auditoría' })
-    @ApiResponse({ status: 200, description: 'Lista de registros de auditoría.' })
-    async getLogs() {
-        return this.auditService.getLogs();
+    @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 15 })
+    @ApiResponse({ status: 200, description: 'Lista paginada de registros de auditoría.' })
+    async getLogs(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 15,
+    ) {
+        return this.auditService.getLogs(page, limit);
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -23,8 +28,14 @@ export class AuditController {
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Registrar una acción de auditoría manualmente' })
     @ApiResponse({ status: 200, description: 'Acción registrada correctamente.' })
-    async log(@Body() data: Record<string, any>) {
-        await this.auditService.logAction(data);
+    async log(@Body() data: Record<string, any>, @Req() req: any) {
+        const user = req.user;
+        await this.auditService.logAction({
+            ...data,
+            usuarioId: user?.id || null,
+            usuarioNombre: user?.nombre || 'Desconocido',
+            usuarioFicha: user?.ficha || null,
+        });
         return { ok: true };
     }
 }

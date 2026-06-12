@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Marca } from '../../marca/entities/marca.entity';
 
 @Entity()
 export class Equipo {
@@ -9,10 +10,14 @@ export class Equipo {
     fmo: string;
 
     @Column({ nullable: true })
-    marca: string;
+    nombre: string;
 
     @Column({ nullable: true })
-    nombre: string;
+    marcaId: number | null;
+
+    @ManyToOne(() => Marca)
+    @JoinColumn({ name: 'marcaId' })
+    marca: Marca;
 
     @Column({ type: 'text', unique: true, nullable: true })
     serial: string;

@@ -15,10 +15,13 @@ export class AuditService {
         return this.auditLogRepository.save(log);
     }
 
-    async getLogs(): Promise<AuditLog[]> {
-        return this.auditLogRepository.find({
+    async getLogs(page: number = 1, limit: number = 15): Promise<{ data: AuditLog[]; total: number; page: number; limit: number; totalPages: number }> {
+        const skip = (page - 1) * limit;
+        const [data, total] = await this.auditLogRepository.findAndCount({
             order: { fechaHora: 'DESC' },
-            take: 100 // Límite de 100 registros para no saturar
+            skip,
+            take: limit,
         });
+        return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
     }
 }

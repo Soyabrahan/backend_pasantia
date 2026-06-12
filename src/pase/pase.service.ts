@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Pase } from './entities/pase.entity';
 import { EquiposPases } from './entities/equipos-pases.entity';
 import { Equipo } from '../equipo/entities/equipo.entity';
+import { Marca } from '../marca/entities/marca.entity';
 import { AuditService } from '../audit/audit.service';
 
 @Injectable()
@@ -15,6 +16,8 @@ export class PaseService {
         private equiposPasesRepository: Repository<EquiposPases>,
         @InjectRepository(Equipo)
         private equipoRepository: Repository<Equipo>,
+        @InjectRepository(Marca)
+        private marcaRepository: Repository<Marca>,
         private readonly auditService: AuditService,
     ) { }
 
@@ -30,8 +33,12 @@ export class PaseService {
             if (equipos && equipos.length > 0) {
                 const equiposEntities: any[] = [];
                 for (const e of equipos) {
-                    const brand = e.marca ? e.marca.toLowerCase() : undefined;
                     const name = e.descripcion ? e.descripcion.toLowerCase() : undefined;
+                    let marcaId: number | null = null;
+                    if (e.marca) {
+                        const marcaEntity = await this.marcaRepository.findOneBy({ nombre: e.marca.toLowerCase() });
+                        if (marcaEntity) marcaId = marcaEntity.id;
+                    }
 
                     if (e.fmos && e.fmos.length > 0) {
                         for (const f of e.fmos) {
@@ -39,13 +46,13 @@ export class PaseService {
                             let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
                             if (equipoItem) {
                                 // Update existing equipment attributes
-                                equipoItem.marca = brand;
+                                equipoItem.marcaId = marcaId;
                                 equipoItem.nombre = name;
                                 equipoItem = await this.equipoRepository.save(equipoItem);
                             } else {
                                 equipoItem = await this.equipoRepository.save({
                                     fmo: f,
-                                    marca: brand,
+                                    marcaId,
                                     nombre: name,
                                 } as any);
                             }
@@ -64,13 +71,13 @@ export class PaseService {
                             let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
                             if (equipoItem) {
                                 // Update existing
-                                equipoItem.marca = brand;
+                                equipoItem.marcaId = marcaId;
                                 equipoItem.nombre = name;
                                 equipoItem = await this.equipoRepository.save(equipoItem);
                             } else {
                                 equipoItem = await this.equipoRepository.save({
                                     serial: s,
-                                    marca: brand,
+                                    marcaId,
                                     nombre: name,
                                 } as any);
                             }
@@ -86,7 +93,7 @@ export class PaseService {
                     } else {
                         // "Ninguno" seleccionado (generic items)
                         const savedEquipo: any = await this.equipoRepository.save({
-                            marca: brand,
+                            marcaId,
                             nombre: name,
                         } as any);
                         if (savedEquipo) {
@@ -144,22 +151,26 @@ export class PaseService {
                 if (equipos.length > 0) {
                     const equiposEntities: any[] = [];
                     for (const e of equipos) {
-                        const brand = e.marca ? e.marca.toLowerCase() : undefined;
                         const name = e.descripcion ? e.descripcion.toLowerCase() : undefined;
+                        let marcaId: number | null = null;
+                        if (e.marca) {
+                            const marcaEntity = await this.marcaRepository.findOneBy({ nombre: e.marca.toLowerCase() });
+                            if (marcaEntity) marcaId = marcaEntity.id;
+                        }
 
                         if (e.fmos && e.fmos.length > 0) {
                             for (const f of e.fmos) {
                                 let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
                                 if (equipoItem) {
                                     // ACTUALIZAMOS el equipo existente
-                                    equipoItem.marca = brand;
+                                    equipoItem.marcaId = marcaId;
                                     equipoItem.nombre = name;
                                     equipoItem = await this.equipoRepository.save(equipoItem);
                                 } else {
                                     // CREAMOS nuevo equipo con FMO
                                     equipoItem = await this.equipoRepository.save({
                                         fmo: f,
-                                        marca: brand,
+                                        marcaId,
                                         nombre: name,
                                     } as any);
                                 }
@@ -177,14 +188,14 @@ export class PaseService {
                                 let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
                                 if (equipoItem) {
                                     // ACTUALIZAMOS el equipo existente
-                                    equipoItem.marca = brand;
+                                    equipoItem.marcaId = marcaId;
                                     equipoItem.nombre = name;
                                     equipoItem = await this.equipoRepository.save(equipoItem);
                                 } else {
                                     // CREAMOS nuevo equipo con Serial
                                     equipoItem = await this.equipoRepository.save({
                                         serial: s,
-                                        marca: brand,
+                                        marcaId,
                                         nombre: name,
                                     } as any);
                                 }
@@ -205,7 +216,7 @@ export class PaseService {
                             if (e.id && !isNaN(Number(e.id))) {
                                 equipoItem = await this.equipoRepository.findOneBy({ id: Number(e.id) });
                                 if (equipoItem) {
-                                    equipoItem.marca = brand;
+                                    equipoItem.marcaId = marcaId;
                                     equipoItem.nombre = name;
                                     equipoItem = await this.equipoRepository.save(equipoItem);
                                 }
@@ -214,7 +225,7 @@ export class PaseService {
                             // Si no se encontró o no tenía ID, creamos uno nuevo
                             if (!equipoItem) {
                                 equipoItem = await this.equipoRepository.save({
-                                    marca: brand,
+                                    marcaId,
                                     nombre: name,
                                 } as any);
                             }
