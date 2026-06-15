@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Delete, Request } from '@nestjs/common';
 import { PaseService } from './pase.service';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { CreatePaseDto, UpdatePaseDto } from './dto/create-pase.dto';
 
 @ApiTags('pases')
@@ -36,6 +36,7 @@ export class PaseController {
 
     @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Obtener un pase por ID' })
+    @ApiParam({ name: 'id', description: 'ID numérico del pase' })
     @ApiResponse({ status: 200, description: 'El pase encontrado.' })
     @Get(':id')
     findOne(@Param('id') id: string) {
@@ -44,6 +45,7 @@ export class PaseController {
 
     @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Actualizar un pase' })
+    @ApiParam({ name: 'id', description: 'ID numérico del pase' })
     @ApiResponse({ status: 200, description: 'El pase ha sido actualizado.' })
     @Patch(':id')
     update(@Param('id') id: string, @Body() updatePaseDto: UpdatePaseDto, @Request() req) {
@@ -58,3 +60,4 @@ export class PaseController {
         return this.paseService.removeAll();
     }
 }
+

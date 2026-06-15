@@ -1,7 +1,8 @@
 import { Controller, Get, Post, Body, UseGuards, HttpCode, Req, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
+import { CreateManualLogDto } from './dto/create-manual-log.dto';
 
 @ApiTags('auditoria')
 @Controller('auditoria')
@@ -27,8 +28,9 @@ export class AuditController {
     @HttpCode(200)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Registrar una acción de auditoría manualmente' })
+    @ApiBody({ type: CreateManualLogDto, description: 'Datos de la acción a registrar manualmente' })
     @ApiResponse({ status: 200, description: 'Acción registrada correctamente.' })
-    async log(@Body() data: Record<string, any>, @Req() req: any) {
+    async log(@Body() data: CreateManualLogDto, @Req() req: any) {
         const user = req.user;
         await this.auditService.logAction({
             ...data,
@@ -39,3 +41,4 @@ export class AuditController {
         return { ok: true };
     }
 }
+
