@@ -17,14 +17,17 @@ import { AuditInterceptor } from './audit/audit.interceptor';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'sqlite',
-        database: 'database.sqlite',
+        database: configService.get<string>('DB_PATH', 'database_dev.sqlite'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // DEV only
+        synchronize: configService.get<string>('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
     }),
@@ -48,3 +51,4 @@ import { AuditInterceptor } from './audit/audit.interceptor';
   ],
 })
 export class AppModule { }
+
