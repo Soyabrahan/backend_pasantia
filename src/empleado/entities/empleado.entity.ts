@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToMany, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
+import { Departamento } from '../../departamento/entities/departamento.entity';
 
 @Entity()
 export class Empleado {
@@ -12,14 +13,18 @@ export class Empleado {
     @Column()
     nombre: string;
 
+    @ManyToOne(() => Departamento, { nullable: true })
+    @JoinColumn({ name: 'departamentoId' })
+    departamento: Departamento;
+
     @Column({ nullable: true })
-    departamento: string;
+    departamentoId: number;
 
     @Column({ nullable: true })
     cargo: string;
 
     @Column({ nullable: true })
-    rol: string; // "Solicitante", "Conductor", "Despachador"
+    rol: string;
 
     @ManyToMany(() => Vehiculo, (vehiculo) => vehiculo.conductores)
     vehiculos: Vehiculo[];

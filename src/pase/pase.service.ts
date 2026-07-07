@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Pase } from './entities/pase.entity';
@@ -17,7 +17,7 @@ export class PaseService {
     ) { }
 
     async create(createPaseDto: any, userId?: number) {
-        const { equipos, ...paseData } = createPaseDto;
+        const { equipos, solicitud, vehiculoId, ...paseData } = createPaseDto;
 
         try {
             // Save Pase
@@ -111,136 +111,24 @@ export class PaseService {
         }
     }
 
-    async update(id: number, updatePaseDto: any) {
-        const { equipos, ...paseData } = updatePaseDto;
-
-        try {
-            // Buscamos si el pase existe
-            const existingPase = await this.paseRepository.findOneBy({ id });
-            if (!existingPase) {
-                throw new Error(`Pase con ID ${id} no encontrado`);
-            }
-
-            // Actualizamos los campos básicos del pase
-            await this.paseRepository.save({
-                ...existingPase,
-                ...paseData,
-                id: id
-            });
-
-            if (equipos) {
-                // Eliminar relaciones existentes
-                await this.equiposPasesRepository.delete({ paseId: id });
-
-                // Recrear relaciones
-                if (equipos.length > 0) {
-                    const equiposEntities: any[] = [];
-                    for (const e of equipos) {
-                        const brand = e.marca ? e.marca.toLowerCase() : undefined;
-                        const name = e.descripcion ? e.descripcion.toLowerCase() : undefined;
-
-                        if (e.fmos && e.fmos.length > 0) {
-                            for (const f of e.fmos) {
-                                let equipoItem = await this.equipoRepository.findOneBy({ fmo: f });
-                                if (equipoItem) {
-                                    // ACTUALIZAMOS el equipo existente
-                                    equipoItem.marca = brand;
-                                    equipoItem.nombre = name;
-                                    equipoItem = await this.equipoRepository.save(equipoItem);
-                                } else {
-                                    // CREAMOS nuevo equipo con FMO
-                                    equipoItem = await this.equipoRepository.save({
-                                        fmo: f,
-                                        marca: brand,
-                                        nombre: name,
-                                    } as any);
-                                }
-                                
-                                if (equipoItem) {
-                                    equiposEntities.push({
-                                        paseId: id,
-                                        equipoId: equipoItem.id,
-                                        cantidad: 1
-                                    });
-                                }
-                            }
-                        } else if (e.seriales && e.seriales.length > 0) {
-                            for (const s of e.seriales) {
-                                let equipoItem = await this.equipoRepository.findOneBy({ serial: s });
-                                if (equipoItem) {
-                                    // ACTUALIZAMOS el equipo existente
-                                    equipoItem.marca = brand;
-                                    equipoItem.nombre = name;
-                                    equipoItem = await this.equipoRepository.save(equipoItem);
-                                } else {
-                                    // CREAMOS nuevo equipo con Serial
-                                    equipoItem = await this.equipoRepository.save({
-                                        serial: s,
-                                        marca: brand,
-                                        nombre: name,
-                                    } as any);
-                                }
-
-                                if (equipoItem) {
-                                    equiposEntities.push({
-                                        paseId: id,
-                                        equipoId: equipoItem.id,
-                                        cantidad: 1
-                                    });
-                                }
-                            }
-                        } else {
-                            // Item genérico (sin FMO ni Serial)
-                            let equipoItem: any = null;
-                            
-                            // Si tiene un ID de equipo previo, intentamos actualizarlo
-                            if (e.id && !isNaN(Number(e.id))) {
-                                equipoItem = await this.equipoRepository.findOneBy({ id: Number(e.id) });
-                                if (equipoItem) {
-                                    equipoItem.marca = brand;
-                                    equipoItem.nombre = name;
-                                    equipoItem = await this.equipoRepository.save(equipoItem);
-                                }
-                            }
-
-                            // Si no se encontró o no tenía ID, creamos uno nuevo
-                            if (!equipoItem) {
-                                equipoItem = await this.equipoRepository.save({
-                                    marca: brand,
-                                    nombre: name,
-                                } as any);
-                            }
-
-                            if (equipoItem) {
-                                equiposEntities.push({
-                                    paseId: id,
-                                    equipoId: equipoItem.id,
-                                    cantidad: e.cantidad || 1
-                                });
-                            }
-                        }
-                    }
-                    if (equiposEntities.length > 0) {
-                        await this.equiposPasesRepository.save(equiposEntities);
-                    }
-                }
-            }
-
-            return this.findOne(id);
-        } catch (error) {
-            console.error('Error in PaseService update:', error);
-            throw error;
+    async update(id: number, updatePaseDto: any, userId: number) {
+        const existingPase = await this.paseRepository.findOneBy({ id });
+        if (!existingPase) {
+            throw new NotFoundException(`Pase con ID ${id} no encontrado`);
         }
+
+        await this.paseRepository.softDelete(id);
+        await this.equiposPasesRepository.softDelete({ paseId: id });
+
+        return this.create(updatePaseDto, userId);
     }
 
     findAll() {
         return this.paseRepository.createQueryBuilder('pase')
-            .withDeleted()
             .leftJoinAndSelect('pase.solicitador', 'solicitador').withDeleted()
             .leftJoinAndSelect('pase.conductor', 'conductor').withDeleted()
             .leftJoinAndSelect('pase.autorizador', 'autorizador').withDeleted()
             .leftJoinAndSelect('pase.despachador', 'despachador').withDeleted()
-            .leftJoinAndSelect('pase.vehiculo', 'vehiculo').withDeleted()
             .leftJoinAndSelect('pase.destino', 'destino').withDeleted()
             .leftJoinAndSelect('pase.equiposPases', 'equiposPases').withDeleted()
             .leftJoinAndSelect('equiposPases.equipo', 'equipo').withDeleted()
@@ -256,12 +144,10 @@ export class PaseService {
 
     findOne(id: number) {
         return this.paseRepository.createQueryBuilder('pase')
-            .withDeleted()
             .leftJoinAndSelect('pase.solicitador', 'solicitador').withDeleted()
             .leftJoinAndSelect('pase.conductor', 'conductor').withDeleted()
             .leftJoinAndSelect('pase.autorizador', 'autorizador').withDeleted()
             .leftJoinAndSelect('pase.despachador', 'despachador').withDeleted()
-            .leftJoinAndSelect('pase.vehiculo', 'vehiculo').withDeleted()
             .leftJoinAndSelect('pase.destino', 'destino').withDeleted()
             .leftJoinAndSelect('pase.equiposPases', 'equiposPases').withDeleted()
             .leftJoinAndSelect('equiposPases.equipo', 'equipo').withDeleted()

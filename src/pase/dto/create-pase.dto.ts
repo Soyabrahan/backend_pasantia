@@ -19,9 +19,6 @@ export class CreatePaseDto {
     @ApiProperty({ description: 'ID del despachador (opcional)', example: 4, required: false })
     despachadorId?: number;
 
-    @ApiProperty({ description: 'ID del vehículo (opcional)', example: 1, required: false })
-    vehiculoId?: number;
-
     @ApiProperty({ description: 'ID del destino (opcional)', example: 1, required: false })
     destinoId?: number;
 
@@ -36,9 +33,6 @@ export class CreatePaseDto {
 
     @ApiProperty({ description: 'Tiempo estimado (opcional)', example: '3 días', required: false })
     tiempo_estimado?: string;
-
-    @ApiProperty({ description: 'Solicitud (opcional)', example: 'Reparación urgente', required: false })
-    solicitud?: string;
 
     @ApiProperty({ 
         description: 'Lista de equipos asociados al pase', 

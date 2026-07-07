@@ -2,26 +2,31 @@ import { Injectable, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Empleado } from './entities/empleado.entity';
+import { DepartamentoService } from '../departamento/departamento.service';
 
 @Injectable()
 export class EmpleadoService implements OnModuleInit {
     constructor(
         @InjectRepository(Empleado)
         private empleadoRepository: Repository<Empleado>,
+        private departamentoService: DepartamentoService,
     ) { }
 
     async onModuleInit() {
-        // Verificar si existe el autorizador por defecto (Gerente)
         const authorizer = await this.empleadoRepository.findOne({
             where: { ficha: '15508' }
         });
 
         if (!authorizer) {
+            let depto = await this.departamentoService.findOneByName('telemática');
+            if (!depto) {
+                depto = await this.departamentoService.create({ nombre: 'telemática' });
+            }
             await this.empleadoRepository.save({
                 ficha: '15508',
                 nombre: 'carmen marquez',
                 cargo: 'gerente de telemática (e)',
-                departamento: 'telemática',
+                departamentoId: depto.id,
                 rol: 'autorizador'
             });
             console.log('Autorizador (Gerente) por defecto creado: Carmen Marquez');
@@ -29,7 +34,7 @@ export class EmpleadoService implements OnModuleInit {
     }
 
     async findAll(): Promise<Empleado[]> {
-        return this.empleadoRepository.find();
+        return this.empleadoRepository.find({ relations: ['departamento'] });
     }
 
     async create(empleado: Partial<Empleado>): Promise<Empleado> {
@@ -38,23 +43,22 @@ export class EmpleadoService implements OnModuleInit {
             throw new ConflictException(`La ficha ${empleado.ficha} ya pertenece al empleado: ${existing.nombre}`);
         }
         
-        // Normalizar a minúsculas
         if (empleado.nombre) empleado.nombre = empleado.nombre.toLowerCase();
         if (empleado.cargo) empleado.cargo = empleado.cargo.toLowerCase();
-        if (empleado.departamento) empleado.departamento = empleado.departamento.toLowerCase();
 
         const newEmpleado = this.empleadoRepository.create(empleado);
         return this.empleadoRepository.save(newEmpleado);
     }
 
     async update(id: number, data: Partial<Empleado>): Promise<Empleado | null> {
-        const empleado = await this.empleadoRepository.findOneBy({ id });
+        const empleado = await this.empleadoRepository.findOne({
+            where: { id },
+            relations: ['departamento'],
+        });
         if (!empleado) return null;
 
-        // Normalizar a minúsculas
         if (data.nombre) data.nombre = data.nombre.toLowerCase();
         if (data.cargo) data.cargo = data.cargo.toLowerCase();
-        if (data.departamento) data.departamento = data.departamento.toLowerCase();
 
         Object.assign(empleado, data);
         return this.empleadoRepository.save(empleado);

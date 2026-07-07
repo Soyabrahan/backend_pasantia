@@ -10,12 +10,13 @@ import { DestinoModule } from './destino/destino.module';
 import { EquipoModule } from './equipo/equipo.module';
 import { PaseModule } from './pase/pase.module';
 import { EmpleadoModule } from './empleado/empleado.module';
+import { DepartamentoModule } from './departamento/departamento.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `env/.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: `env/.env.${process.env.NODE_ENV || 'production'}`,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -34,6 +35,7 @@ import { EmpleadoModule } from './empleado/empleado.module';
     EquipoModule,
     PaseModule,
     EmpleadoModule,
+    DepartamentoModule,
   ],
   controllers: [AppController],
   providers: [AppService],

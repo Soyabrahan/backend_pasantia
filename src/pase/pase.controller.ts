@@ -43,11 +43,12 @@ export class PaseController {
     }
 
     @UseGuards(AuthGuard('jwt'))
-    @ApiOperation({ summary: 'Actualizar un pase' })
-    @ApiResponse({ status: 200, description: 'El pase ha sido actualizado.' })
+    @ApiOperation({ summary: 'Actualizar un pase (crea uno nuevo con los cambios y elimina el original)' })
+    @ApiResponse({ status: 200, description: 'El pase ha sido actualizado. Se creó un nuevo pase con los cambios.' })
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updatePaseDto: UpdatePaseDto) {
-        return this.paseService.update(+id, updatePaseDto);
+    update(@Param('id') id: string, @Body() updatePaseDto: UpdatePaseDto, @Request() req) {
+        const userId = req.user.id;
+        return this.paseService.update(+id, updatePaseDto, userId);
     }
 
     @UseGuards(AuthGuard('jwt'))
