@@ -1,0 +1,15 @@
+META {
+  "name": "Create Destino",
+  "type": "http",
+  "seq": 1
+}
+
+POST {{baseUrl}}/destinos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Almacén Principal Ferrominera",
+  "direccion": "Puerto Ordaz, Av. Caracas",
+  "telefono": "0286-9601111"
+}

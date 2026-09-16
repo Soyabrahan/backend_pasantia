@@ -1,0 +1,15 @@
+META {
+  "name": "Update Destino",
+  "type": "http",
+  "seq": 3
+}
+
+PATCH {{baseUrl}}/destinos/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Almacén Secundario",
+  "direccion": "Ciudad Guayana, Av. Principal",
+  "telefono": "0286-5555555"
+}

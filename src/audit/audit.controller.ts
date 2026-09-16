@@ -1,13 +1,18 @@
-import { Controller, Get, Post, Body, UseGuards, HttpCode, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, HttpCode, Req, Query, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
+import { AuditChatService } from './audit-chat.service';
 import { CreateManualLogDto } from './dto/create-manual-log.dto';
+import { ChatRequestDto } from './dto/chat-request.dto';
 
 @ApiTags('auditoria')
 @Controller('auditoria')
 export class AuditController {
-    constructor(private readonly auditService: AuditService) {}
+    constructor(
+        private readonly auditService: AuditService,
+        private readonly auditChatService: AuditChatService,
+    ) {}
 
     @UseGuards(AuthGuard('jwt'))
     @Get()
@@ -40,5 +45,47 @@ export class AuditController {
         });
         return { ok: true };
     }
-}
 
+    @UseGuards(AuthGuard('jwt'))
+    @Post('chat')
+    @HttpCode(200)
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Chat inteligente de auditoría con IA' })
+    @ApiBody({ type: ChatRequestDto, description: 'Mensaje del usuario para el asistente de auditoría' })
+    @ApiResponse({ status: 200, description: 'Respuesta del asistente de auditoría.' })
+    async chat(@Body() body: ChatRequestDto) {
+        return this.auditChatService.chat(body.message, body.history);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('search')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Buscar en los registros de auditoría' })
+    @ApiQuery({ name: 'q', required: true, type: String, description: 'Texto a buscar' })
+    @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
+    @ApiResponse({ status: 200, description: 'Resultados de la búsqueda.' })
+    async search(
+        @Query('q') q: string,
+        @Query('limit') limit: number = 10,
+    ) {
+        return this.auditService.searchLogs(q, limit);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('pases/:numeroPase')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Obtener el historial de auditoría de un pase específico' })
+    @ApiResponse({ status: 200, description: 'Historial de auditoría del pase.' })
+    async getPaseHistory(@Param('numeroPase') numeroPase: string) {
+        return this.auditService.getPaseHistory(numeroPase);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('stats')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Obtener estadísticas rápidas de auditoría' })
+    @ApiResponse({ status: 200, description: 'Estadísticas de auditoría.' })
+    async getStats() {
+        return this.auditService.getStats();
+    }
+}

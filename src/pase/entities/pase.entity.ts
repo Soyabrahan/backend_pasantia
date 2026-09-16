@@ -1,5 +1,4 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
-import { Vehiculo } from '../../vehiculo/entities/vehiculo.entity';
 import { Destino } from '../../destino/entities/destino.entity';
 import { Empleado } from '../../empleado/entities/empleado.entity';
 import { EquiposPases } from './equipos-pases.entity';
@@ -10,7 +9,7 @@ export class Pase {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column({ unique: true })
+    @Column()
     numeroPase: string;
 
     @Column()
@@ -50,12 +49,8 @@ export class Pase {
     @Column({ nullable: true })
     despachadorId: number;
 
-    @ManyToOne(() => Vehiculo)
-    @JoinColumn({ name: 'vehiculoId' })
-    vehiculo: Vehiculo;
-
     @Column({ nullable: true })
-    vehiculoId: number;
+    vehiculo_snapshot: string;
 
     @ManyToOne(() => Destino)
     @JoinColumn({ name: 'destinoId' })
@@ -75,9 +70,6 @@ export class Pase {
 
     @Column({ nullable: true })
     tiempo_estimado: string;
-
-    @Column({ type: 'text', nullable: true })
-    solicitud: string;
 
     @OneToMany(() => EquiposPases, (equiposPases) => equiposPases.pase)
     equiposPases: EquiposPases[];

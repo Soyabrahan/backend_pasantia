@@ -1,0 +1,11 @@
+META {
+  "name": "Logout",
+  "type": "http",
+  "seq": 4
+}
+
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}

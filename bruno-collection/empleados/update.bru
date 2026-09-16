@@ -1,0 +1,15 @@
+META {
+  "name": "Update Empleado",
+  "type": "http",
+  "seq": 3
+}
+
+PATCH {{baseUrl}}/empleados/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nombre": "Juan Pérez Actualizado",
+  "cargo": "Supervisor",
+  "departamentoId": 1
+}

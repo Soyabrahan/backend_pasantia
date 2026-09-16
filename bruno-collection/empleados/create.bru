@@ -1,0 +1,17 @@
+META {
+  "name": "Create Empleado",
+  "type": "http",
+  "seq": 1
+}
+
+POST {{baseUrl}}/empleados
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ficha": "EMP001",
+  "nombre": "Juan Pérez",
+  "departamentoId": 1,
+  "cargo": "Operador",
+  "rol": "Conductor"
+}

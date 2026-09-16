@@ -13,13 +13,14 @@ import { PaseModule } from './pase/pase.module';
 import { EmpleadoModule } from './empleado/empleado.module';
 import { AuditModule } from './audit/audit.module';
 import { MarcaModule } from './marca/marca.module';
+import { DepartamentoModule } from './departamento/departamento.module';
 import { AuditInterceptor } from './audit/audit.interceptor';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `env/.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: ['.env', `env/.env.${process.env.NODE_ENV || 'development'}`],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -40,6 +41,7 @@ import { AuditInterceptor } from './audit/audit.interceptor';
     EmpleadoModule,
     AuditModule,
     MarcaModule,
+    DepartamentoModule,
   ],
   controllers: [AppController],
   providers: [

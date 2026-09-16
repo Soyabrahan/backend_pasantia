@@ -1,0 +1,19 @@
+META {
+  "name": "Login",
+  "type": "http",
+  "seq": 1
+}
+
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "ficha": "0000",
+  "contrasena": "admin"
+}
+
+SCRIPT {
+  if (res.status === 200 && res.body.access_token) {
+    bru.setVar("token", res.body.access_token);
+  }
+}

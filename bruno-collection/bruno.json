@@ -1,0 +1,14 @@
+{
+  "name": "Backend Pasantia API",
+  "version": "1.0.0",
+  "activeEnvironment": "local",
+  "environments": [
+    {
+      "name": "local",
+      "variables": {
+        "baseUrl": "http://localhost:3000",
+        "token": ""
+      }
+    }
+  ]
+}

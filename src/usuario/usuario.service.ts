@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Raw } from 'typeorm';
 import { Usuario } from './entities/usuario.entity';
 import * as bcrypt from 'bcrypt';
 
@@ -29,8 +29,8 @@ export class UsuarioService implements OnModuleInit {
     async findOne(identifier: string): Promise<Usuario | null> {
         return this.usuarioRepository.findOne({
             where: [
-                { ficha: identifier },
-                { nombre: identifier }
+                { ficha: Raw((alias) => `LOWER(${alias}) = LOWER(:value)`, { value: identifier }) },
+                { nombre: Raw((alias) => `LOWER(${alias}) = LOWER(:value)`, { value: identifier }) },
             ]
         });
     }
@@ -40,6 +40,8 @@ export class UsuarioService implements OnModuleInit {
     }
 
     async create(usuario: Partial<Usuario>): Promise<Usuario> {
+        if (usuario.ficha) usuario.ficha = usuario.ficha.toUpperCase();
+        if (usuario.nombre) usuario.nombre = usuario.nombre.toUpperCase();
         const existing = await this.usuarioRepository.findOneBy({ ficha: usuario.ficha });
         if (existing) {
             throw new ConflictException(`La ficha ${usuario.ficha} ya está registrada en el sistema.`);
@@ -60,6 +62,9 @@ export class UsuarioService implements OnModuleInit {
     async update(id: number, data: Partial<Usuario>): Promise<Usuario | null> {
         const usuario = await this.usuarioRepository.findOneBy({ id });
         if (!usuario) return null;
+
+        if (data.ficha) data.ficha = data.ficha.toUpperCase();
+        if (data.nombre) data.nombre = data.nombre.toUpperCase();
 
         if (data.contrasena) {
             const salt = await bcrypt.genSalt();
