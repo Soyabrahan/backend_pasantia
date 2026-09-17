@@ -25,7 +25,7 @@ export class Pase {
     @JoinColumn({ name: 'solicitadorId' })
     solicitador: Empleado;
 
-    @Column()
+    @Column({ nullable: true })
     solicitadorId: number;
 
     @ManyToOne(() => Empleado)
