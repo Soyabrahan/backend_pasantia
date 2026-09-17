@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, MoreThanOrEqual } from 'typeorm';
 import { AuditLog } from './audit-log.entity';
-import OpenAI from 'openai';
 
 interface ChatMessage {
     role: 'user' | 'assistant';
@@ -18,7 +17,8 @@ export interface ChatResponse {
 @Injectable()
 export class AuditChatService {
     private readonly logger = new Logger(AuditChatService.name);
-    private openai: OpenAI;
+    private readonly geminiModel = 'gemini-3.5-flash-lite';
+    private readonly geminiApiKey: string;
     private readonly SYSTEM_PROMPT = `
 Eres un asistente de auditoría especializado en el sistema de Pases FMO. Tu función es ayudar a los usuarios a consultar el registro de auditoría del sistema.
 
@@ -74,174 +74,72 @@ Los campos que pueden aparecer en los cambios son:
 7. Después de cada respuesta, sugiere 3 preguntas relacionadas que el usuario podría hacer a continuación.
 `.trim();
 
-    private readonly tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
-        {
-            type: 'function',
-            function: {
-                name: 'get_recent_edits',
-                description: 'Obtiene las ediciones de pases más recientes en el sistema',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        limit: { type: 'number', description: 'Cantidad de resultados a devolver (máximo 20)' },
-                    },
-                    required: ['limit'],
-                },
-            },
-        },
-        {
-            type: 'function',
-            function: {
-                name: 'get_pase_history',
-                description: 'Obtiene todo el historial de auditoría de un pase específico por su número',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        numeroPase: { type: 'string', description: 'Número del pase a consultar (ej: 86467)' },
-                    },
-                    required: ['numeroPase'],
-                },
-            },
-        },
-        {
-            type: 'function',
-            function: {
-                name: 'search_logs',
-                description: 'Busca en los registros de auditoría por cualquier texto',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        query: { type: 'string', description: 'Texto a buscar en el campo accion' },
-                        limit: { type: 'number', description: 'Cantidad de resultados (máximo 20)' },
-                    },
-                    required: ['query'],
-                },
-            },
-        },
-        {
-            type: 'function',
-            function: {
-                name: 'get_user_actions',
-                description: 'Obtiene las acciones realizadas por un usuario específico',
-                parameters: {
-                    type: 'object',
-                    properties: {
-                        userName: { type: 'string', description: 'Nombre del usuario a consultar' },
-                        limit: { type: 'number', description: 'Cantidad de resultados (máximo 20)' },
-                    },
-                    required: ['userName', 'limit'],
-                },
-            },
-        },
-        {
-            type: 'function',
-            function: {
-                name: 'get_stats',
-                description: 'Obtiene estadísticas rápidas del sistema de auditoría',
-                parameters: {
-                    type: 'object',
-                    properties: {},
-                    required: [],
-                },
-            },
-        },
-    ];
-
     constructor(
         @InjectRepository(AuditLog)
         private auditLogRepository: Repository<AuditLog>,
         private configService: ConfigService,
     ) {
-        const apiKey = this.configService.get<string>('NVIDIA_API_KEY');
-        if (!apiKey) {
-            this.logger.warn('NVIDIA_API_KEY no configurada. El chat de auditoría no funcionará.');
+        this.geminiApiKey = this.configService.get<string>('GEMINI_API_KEY') || '';
+        if (!this.geminiApiKey) {
+            this.logger.warn('GEMINI_API_KEY no configurada. El chat de auditoría no funcionará.');
         }
-        this.openai = new OpenAI({
-            apiKey: apiKey || '',
-            baseURL: 'https://integrate.api.nvidia.com/v1',
-            timeout: 60000,
-            maxRetries: 2,
-        });
     }
 
     async chat(message: string, history?: ChatMessage[]): Promise<ChatResponse> {
         try {
-            const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-                { role: 'system', content: this.SYSTEM_PROMPT },
-                ...(history || []).map((msg) => ({
-                    role: msg.role as 'user' | 'assistant',
-                    content: msg.content,
-                })),
-                { role: 'user', content: message },
-            ];
-
-            this.logger.log(`Enviando petición al modelo nvidia/nemotron-3.5-lightning-30b-a3b con ${messages.length} mensajes`);
-
-            const response = await this.openai.chat.completions.create({
-                model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
-                messages,
-                tools: this.tools,
-                tool_choice: 'auto',
-                temperature: 1,
-                top_p: 0.95,
-                max_tokens: 16384,
-                chat_template_kwargs: { enable_thinking: true },
-                reasoning_budget: 16384,
-            } as any);
-
-            this.logger.log(`Respuesta recibida. finish_reason: ${response.choices[0]?.finish_reason}, tool_calls: ${response.choices[0]?.message?.tool_calls?.length || 0}`);
-
-            let choice = response.choices[0];
-            let safetyNet = 0;
-
-            while (choice.finish_reason === 'tool_calls' && choice.message.tool_calls && safetyNet < 5) {
-                safetyNet++;
-                const toolCalls = choice.message.tool_calls;
-
-                const toolMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-                    ...messages,
-                    choice.message,
-                ];
-
-                for (const toolCall of toolCalls) {
-                    if (toolCall.type !== 'function') continue;
-                    const fn = toolCall.function;
-                    try {
-                        const functionResult = await this.executeFunction(
-                            fn.name,
-                            JSON.parse(fn.arguments),
-                        );
-                        toolMessages.push({
-                            role: 'tool',
-                            tool_call_id: toolCall.id,
-                            content: JSON.stringify(functionResult),
-                        });
-                    } catch (error) {
-                        this.logger.error(`Error executing function ${fn.name}:`, error);
-                        toolMessages.push({
-                            role: 'tool',
-                            tool_call_id: toolCall.id,
-                            content: JSON.stringify({ error: 'Error al consultar la base de datos' }),
-                        });
-                    }
-                }
-
-                const followUp = await this.openai.chat.completions.create({
-                    model: 'nvidia/nemotron-3.5-lightning-30b-a3b',
-                    messages: toolMessages,
-                    tools: this.tools,
-                    tool_choice: 'auto',
-                    temperature: 1,
-                    top_p: 0.95,
-                    max_tokens: 16384,
-                    chat_template_kwargs: { enable_thinking: true },
-                    reasoning_budget: 16384,
-                } as any);
-
-                choice = followUp.choices[0];
+            if (!this.geminiApiKey) {
+                return {
+                    reply: 'La clave de API de Gemini no está configurada. Añade GEMINI_API_KEY al archivo .env para usar el chat de auditoría.',
+                    suggestedQuestions: [],
+                };
             }
 
-            const reply = choice.message.content || 'No se pudo generar una respuesta.';
+            const contentMessages = [
+                ...(history || []).map((msg) => ({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }],
+                })),
+                {
+                    role: 'user',
+                    parts: [{ text: message }],
+                },
+            ];
+
+            this.logger.log(`Enviando petición al modelo ${this.geminiModel} con ${contentMessages.length} mensajes`);
+
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.geminiApiKey}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        systemInstruction: {
+                            parts: [{ text: this.SYSTEM_PROMPT }],
+                        },
+                        contents: contentMessages,
+                        generationConfig: {
+                            temperature: 0.7,
+                            topP: 0.8,
+                            maxOutputTokens: 2048,
+                        },
+                    }),
+                },
+            );
+
+            const payload = await response.json();
+
+            if (!response.ok) {
+                const messageError = payload?.error?.message || 'Error al contactar a Gemini';
+                throw new Error(messageError);
+            }
+
+            const reply = payload.candidates?.[0]?.content?.parts
+                ?.map((part: { text?: string }) => part.text || '')
+                .join('')
+                || 'No se pudo generar una respuesta.';
+
             const suggestedQuestions = this.generateSuggestedQuestions(message);
 
             return { reply, suggestedQuestions };
@@ -249,16 +147,16 @@ Los campos que pueden aparecer en los cambios son:
             this.logger.error('Error en chat de auditoría:', error.message || error);
             this.logger.error('Error completo:', JSON.stringify(error, null, 2));
 
-            if (error.status === 429 || error.message?.includes('429')) {
+            if (error.message?.includes('429') || error.status === 429) {
                 return {
                     reply: 'Lo siento, el servicio de IA ha excedido su cuota gratuita por ahora. Por favor, intenta de nuevo más tarde o contacta al administrador para configurar una clave con mayor límite.',
                     suggestedQuestions: ['¿Cuál fue el último pase editado?', '¿Cuántas ediciones hubo hoy?', '¿Quién ha hecho más modificaciones?'],
                 };
             }
 
-            if (error.status === 401 || error.status === 403 || error.message?.includes('API_KEY')) {
+            if (error.message?.includes('API_KEY') || error.status === 401 || error.status === 403) {
                 return {
-                    reply: 'Lo siento, la clave de API de NVIDIA no está configurada correctamente. Por favor, contacta al administrador del sistema.',
+                    reply: 'Lo siento, la clave de API de Gemini no está configurada correctamente. Por favor, contacta al administrador del sistema.',
                     suggestedQuestions: [],
                 };
             }
