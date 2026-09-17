@@ -17,7 +17,7 @@ export interface ChatResponse {
 @Injectable()
 export class AuditChatService {
     private readonly logger = new Logger(AuditChatService.name);
-    private readonly geminiModel = 'gemini-3.5-flash-lite';
+    private readonly geminiModel: string;
     private readonly geminiApiKey: string;
     private readonly SYSTEM_PROMPT = `
 Eres un asistente de auditoría especializado en el sistema de Pases FMO. Tu función es ayudar a los usuarios a consultar el registro de auditoría del sistema.
@@ -74,12 +74,74 @@ Los campos que pueden aparecer en los cambios son:
 7. Después de cada respuesta, sugiere 3 preguntas relacionadas que el usuario podría hacer a continuación.
 `.trim();
 
+    private readonly geminiTools = [
+        {
+            functionDeclarations: [
+                {
+                    name: 'get_recent_edits',
+                    description: 'Obtiene las ediciones de pases más recientes en el sistema',
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: {
+                            limit: { type: 'NUMBER', description: 'Cantidad de resultados a devolver (máximo 20)' },
+                        },
+                        required: ['limit'],
+                    },
+                },
+                {
+                    name: 'get_pase_history',
+                    description: 'Obtiene todo el historial de auditoría de un pase específico por su número',
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: {
+                            numeroPase: { type: 'STRING', description: 'Número del pase a consultar (ej: 86467)' },
+                        },
+                        required: ['numeroPase'],
+                    },
+                },
+                {
+                    name: 'search_logs',
+                    description: 'Busca en los registros de auditoría por cualquier texto',
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: {
+                            query: { type: 'STRING', description: 'Texto a buscar en el campo accion' },
+                            limit: { type: 'NUMBER', description: 'Cantidad de resultados (máximo 20)' },
+                        },
+                        required: ['query'],
+                    },
+                },
+                {
+                    name: 'get_user_actions',
+                    description: 'Obtiene las acciones realizadas por un usuario específico',
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: {
+                            userName: { type: 'STRING', description: 'Nombre del usuario a consultar' },
+                            limit: { type: 'NUMBER', description: 'Cantidad de resultados (máximo 20)' },
+                        },
+                        required: ['userName', 'limit'],
+                    },
+                },
+                {
+                    name: 'get_stats',
+                    description: 'Obtiene estadísticas rápidas del sistema de auditoría',
+                    parameters: {
+                        type: 'OBJECT',
+                        properties: {},
+                    },
+                },
+            ],
+        },
+    ];
+
     constructor(
         @InjectRepository(AuditLog)
         private auditLogRepository: Repository<AuditLog>,
         private configService: ConfigService,
     ) {
         this.geminiApiKey = this.configService.get<string>('GEMINI_API_KEY') || '';
+        this.geminiModel = this.configService.get<string>('GEMINI_MODEL') || 'gemini-3.5-flash-lite';
         if (!this.geminiApiKey) {
             this.logger.warn('GEMINI_API_KEY no configurada. El chat de auditoría no funcionará.');
         }
@@ -94,7 +156,7 @@ Los campos que pueden aparecer en los cambios son:
                 };
             }
 
-            const contentMessages = [
+            const contentMessages: any[] = [
                 ...(history || []).map((msg) => ({
                     role: msg.role === 'assistant' ? 'model' : 'user',
                     parts: [{ text: msg.content }],
@@ -105,40 +167,94 @@ Los campos que pueden aparecer en los cambios son:
                 },
             ];
 
-            this.logger.log(`Enviando petición al modelo ${this.geminiModel} con ${contentMessages.length} mensajes`);
+            let reply = '';
+            let safetyNet = 0;
+            const maxTurns = 5;
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.geminiApiKey}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+            while (safetyNet < maxTurns) {
+                safetyNet++;
+                this.logger.log(`Enviando petición a Gemini (${this.geminiModel}) - turno ${safetyNet}`);
+
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${this.geminiModel}:generateContent?key=${this.geminiApiKey}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            systemInstruction: {
+                                parts: [{ text: this.SYSTEM_PROMPT }],
+                            },
+                            contents: contentMessages,
+                            tools: this.geminiTools,
+                            generationConfig: {
+                                temperature: 0.7,
+                                topP: 0.8,
+                                maxOutputTokens: 2048,
+                            },
+                        }),
                     },
-                    body: JSON.stringify({
-                        systemInstruction: {
-                            parts: [{ text: this.SYSTEM_PROMPT }],
-                        },
-                        contents: contentMessages,
-                        generationConfig: {
-                            temperature: 0.7,
-                            topP: 0.8,
-                            maxOutputTokens: 2048,
-                        },
-                    }),
-                },
-            );
+                );
 
-            const payload = await response.json();
+                const payload = await response.json();
 
-            if (!response.ok) {
-                const messageError = payload?.error?.message || 'Error al contactar a Gemini';
-                throw new Error(messageError);
+                if (!response.ok) {
+                    const messageError = payload?.error?.message || 'Error al contactar a Gemini';
+                    throw new Error(messageError);
+                }
+
+                const candidate = payload.candidates?.[0];
+                if (!candidate || !candidate.content) {
+                    throw new Error('Respuesta vacía recibida de Gemini');
+                }
+
+                const parts = candidate.content.parts || [];
+                const functionCallParts = parts.filter((part: any) => part.functionCall);
+
+                if (functionCallParts.length > 0) {
+                    contentMessages.push(candidate.content);
+
+                    const functionResponseParts: any[] = [];
+                    for (const fcPart of functionCallParts) {
+                        const fn = fcPart.functionCall;
+                        try {
+                            const functionResult = await this.executeFunction(fn.name, fn.args || {});
+                            functionResponseParts.push({
+                                functionResponse: {
+                                    name: fn.name,
+                                    response: { result: functionResult },
+                                    ...(fn.id ? { id: fn.id } : {}),
+                                },
+                            });
+                        } catch (fnError: any) {
+                            this.logger.error(`Error ejecutando ${fn.name}:`, fnError.message || fnError);
+                            functionResponseParts.push({
+                                functionResponse: {
+                                    name: fn.name,
+                                    response: { error: 'Error al consultar la base de datos' },
+                                    ...(fn.id ? { id: fn.id } : {}),
+                                },
+                            });
+                        }
+                    }
+
+                    contentMessages.push({
+                        role: 'user',
+                        parts: functionResponseParts,
+                    });
+                } else {
+                    reply = parts
+                        .map((part: { text?: string }) => part.text || '')
+                        .join('')
+                        .trim();
+                    break;
+                }
             }
 
-            const reply = payload.candidates?.[0]?.content?.parts
-                ?.map((part: { text?: string }) => part.text || '')
-                .join('')
-                || 'No se pudo generar una respuesta.';
+            if (!reply) {
+                reply = 'No se pudo generar una respuesta completa.';
+            }
 
             const suggestedQuestions = this.generateSuggestedQuestions(message);
 
@@ -173,13 +289,13 @@ Los campos que pueden aparecer en los cambios son:
 
         switch (name) {
             case 'get_recent_edits':
-                return this.getRecentEdits(args.limit || 5);
+                return this.getRecentEdits(Number(args?.limit) || 5);
             case 'get_pase_history':
-                return this.getPaseHistory(args.numeroPase);
+                return this.getPaseHistory(String(args?.numeroPase || ''));
             case 'search_logs':
-                return this.searchLogs(args.query, args.limit || 10);
+                return this.searchLogs(String(args?.query || ''), Number(args?.limit) || 10);
             case 'get_user_actions':
-                return this.getUserActions(args.userName, args.limit || 10);
+                return this.getUserActions(String(args?.userName || ''), Number(args?.limit) || 10);
             case 'get_stats':
                 return this.getStats();
             default:
